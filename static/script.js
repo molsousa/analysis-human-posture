@@ -1,331 +1,322 @@
-// Configurações
-const API_BASE_URL = `http://${window.location.hostname}:5000`;
+class PostureStreamingApp {
+    constructor() {
+        this.videoServer = 'http://localhost:5001';
+        this.apiUrl = `${this.videoServer}/api/status`;
+        this.isConnected = false;
+        this.lastUpdate = Date.now();
+        this.sessionStartTime = Date.now();
+        this.fps = 0;
+        this.frameCount = 0;
+        this.fpsInterval = null;
 
-// Elementos DOM
-let statusDot, statusText, currentExercise, currentReps, analysisStatus;
-let exerciseSelect, videoSelect, startBtn, stopBtn, refreshBtn;
-let logsList, errorModal, errorMessage;
-let videoSourceRadios, videoFileGroup;
-
-// Estado da aplicação
-let appState = {
-    isRunning: false,
-    currentExercise: null,
-    stats: {
-        current_reps: 0
+        this.initializeElements();
+        this.setupEventListeners();
+        this.initializeApp();
     }
-};
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', function () {
-    initializeElements();
-    setupEventListeners();
-    initializeApp();
-});
+    initializeElements() {
+        // Elementos de status
+        this.statusDot = document.getElementById('statusDot');
+        this.statusText = document.getElementById('statusText');
+        this.apiStatus = document.getElementById('apiStatus');
 
-function initializeElements() {
-    // Elementos de status
-    statusDot = document.getElementById('statusDot');
-    statusText = document.getElementById('statusText');
-    currentExercise = document.getElementById('currentExercise');
-    currentReps = document.getElementById('currentReps');
-    analysisStatus = document.getElementById('analysisStatus');
+        // Elementos de vídeo
+        this.videoStream = document.getElementById('videoStream');
+        this.fullscreenBtn = document.getElementById('fullscreenBtn');
+        this.refreshBtn = document.getElementById('refreshBtn');
 
-    // Elementos de controle
-    exerciseSelect = document.getElementById('exerciseSelect');
-    videoSelect = document.getElementById('videoSelect');
-    startBtn = document.getElementById('startBtn');
-    stopBtn = document.getElementById('stopBtn');
-    refreshBtn = document.getElementById('refreshBtn');
+        // Elementos de análise
+        this.exerciseName = document.getElementById('exerciseName');
+        this.repsCount = document.getElementById('repsCount');
+        this.repsCounter = document.getElementById('repsCounter');
+        this.movementPhase = document.getElementById('movementPhase');
+        this.phaseText = document.getElementById('phaseText');
+        this.postureScore = document.getElementById('postureScore');
+        this.scoreFill = document.getElementById('scoreFill');
+        this.postureFeedback = document.getElementById('postureFeedback');
+        this.postureFeedbackType = document.getElementById('postureFeedbackType');
 
-    // Elementos de logs
-    logsList = document.getElementById('logsList');
+        // Elementos de sistema
+        this.lastUpdateElement = document.getElementById('lastUpdate');
+        this.fpsCounter = document.getElementById('fpsCounter');
+        this.sessionTimeElement = document.getElementById('sessionTime');
+        this.currentTimeElement = document.getElementById('currentTime');
 
-    // Modal
-    errorModal = document.getElementById('errorModal');
-    errorMessage = document.getElementById('errorMessage');
+        // Modal
+        this.instructionsModal = document.getElementById('instructionsModal');
+        this.instructionsBtn = document.getElementById('instructionsBtn');
+        this.logsBtn = document.getElementById('logsBtn');
+        this.modalCloseButtons = document.querySelectorAll('.modal-close, .modal-close-btn');
+    }
 
-    // Controles de vídeo
-    videoSourceRadios = document.querySelectorAll('input[name="videoSource"]');
-    videoFileGroup = document.getElementById('videoFileGroup');
+    setupEventListeners() {
+        // Botões de vídeo
+        this.fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+        this.refreshBtn.addEventListener('click', () => this.refreshVideoStream());
 
-    // URL do servidor
-    document.getElementById('serverUrl').textContent = API_BASE_URL;
-}
+        // Botões de ação
+        this.instructionsBtn.addEventListener('click', () => this.showInstructions());
+        this.logsBtn.addEventListener('click', () => this.showLogs());
 
-function setupEventListeners() {
-    // Botões
-    startBtn.addEventListener('click', startAnalysis);
-    stopBtn.addEventListener('click', stopAnalysis);
-    refreshBtn.addEventListener('click', refreshData);
-
-    // Radio buttons para fonte de vídeo
-    videoSourceRadios.forEach(radio => {
-        radio.addEventListener('change', handleVideoSourceChange);
-    });
-
-    // Botão para atualizar logs
-    document.getElementById('refreshLogsBtn').addEventListener('click', loadLogs);
-
-    // Fechar modal
-    document.querySelectorAll('.modal-close, .modal-close-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            errorModal.classList.add('hidden');
+        // Fechar modal
+        this.modalCloseButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.instructionsModal.classList.remove('active');
+            });
         });
-    });
 
-    // Fechar modal com ESC
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !errorModal.classList.contains('hidden')) {
-            errorModal.classList.add('hidden');
+        // Fechar modal com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.instructionsModal.classList.contains('active')) {
+                this.instructionsModal.classList.remove('active');
+            }
+        });
+
+        // Contador de FPS do vídeo
+        this.videoStream.addEventListener('load', () => {
+            this.frameCount++;
+        });
+    }
+
+    initializeApp() {
+        // Atualizar horário atual
+        this.updateCurrentTime();
+        setInterval(() => this.updateCurrentTime(), 1000);
+
+        // Iniciar contador de FPS
+        this.startFpsCounter();
+
+        // Iniciar timer da sessão
+        this.startSessionTimer();
+
+        // Conectar ao servidor de análise
+        this.connectToAnalysisServer();
+
+        // Iniciar atualização de status
+        this.startStatusUpdates();
+
+        // Mostrar instruções inicialmente
+        setTimeout(() => this.showInstructions(), 1000);
+    }
+
+    updateCurrentTime() {
+        const now = new Date();
+        this.currentTimeElement.textContent = now.toLocaleTimeString('pt-BR');
+    }
+
+    startFpsCounter() {
+        this.fpsInterval = setInterval(() => {
+            this.fps = this.frameCount;
+            this.frameCount = 0;
+            this.fpsCounter.textContent = this.fps;
+        }, 1000);
+    }
+
+    startSessionTimer() {
+        setInterval(() => {
+            const elapsed = Math.floor((Date.now() - this.sessionStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            this.sessionTimeElement.textContent = `${minutes}:${seconds}`;
+        }, 1000);
+    }
+
+    async connectToAnalysisServer() {
+        try {
+            const response = await fetch(this.apiUrl, { timeout: 5000 });
+
+            if (response.ok) {
+                this.setConnectionStatus(true);
+                this.isConnected = true;
+            } else {
+                this.setConnectionStatus(false);
+                this.isConnected = false;
+            }
+        } catch (error) {
+            this.setConnectionStatus(false);
+            this.isConnected = false;
+            console.warn('Não foi possível conectar ao servidor de análise:', error.message);
         }
-    });
-}
-
-function initializeApp() {
-    // Atualizar tempo do servidor
-    updateServerTime();
-    setInterval(updateServerTime, 1000);
-
-    // Carregar dados iniciais
-    refreshData();
-
-    // Iniciar atualização de status
-    setInterval(updateStatus, 2000);
-}
-
-function updateServerTime() {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('pt-BR');
-    document.getElementById('serverTime').textContent = timeString;
-}
-
-async function refreshData() {
-    try {
-        await Promise.all([
-            loadExercises(),
-            loadVideos(),
-            loadLogs(),
-            updateStatus()
-        ]);
-
-        updateConnectionStatus(true);
-    } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-        updateConnectionStatus(false);
-    }
-}
-
-async function loadExercises() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/exercises`);
-        const exercises = await response.json();
-
-        exerciseSelect.innerHTML = '<option value="">Selecione um exercício...</option>';
-        exercises.forEach(exercise => {
-            const option = document.createElement('option');
-            option.value = exercise.file;
-            option.textContent = exercise.name;
-            exerciseSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Erro ao carregar exercícios:', error);
-        exerciseSelect.innerHTML = '<option value="">Erro ao carregar exercícios</option>';
-    }
-}
-
-async function loadVideos() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/videos`);
-        const videos = await response.json();
-
-        videoSelect.innerHTML = '<option value="">Selecione um vídeo...</option>';
-        videos.forEach(video => {
-            const option = document.createElement('option');
-            option.value = video.name;
-            option.textContent = video.name;
-            videoSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Erro ao carregar vídeos:', error);
-        videoSelect.innerHTML = '<option value="">Nenhum vídeo encontrado</option>';
-    }
-}
-
-async function loadLogs() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/logs`);
-        const logs = await response.json();
-
-        if (logs.length === 0) {
-            logsList.innerHTML = '<div class="log-placeholder">Nenhum log encontrado</div>';
-            return;
-        }
-
-        logsList.innerHTML = '';
-        logs.forEach(log => {
-            const logItem = document.createElement('div');
-            logItem.className = 'log-item';
-            logItem.innerHTML = `
-                <div><strong>${log.name}</strong></div>
-                <div style="font-size: 12px; color: #666;">
-                    ${log.modified} • ${(log.size / 1024).toFixed(1)} KB
-                </div>
-            `;
-            logsList.appendChild(logItem);
-        });
-    } catch (error) {
-        console.error('Erro ao carregar logs:', error);
-        logsList.innerHTML = '<div class="log-placeholder">Erro ao carregar logs</div>';
-    }
-}
-
-async function updateStatus() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/status`);
-        const status = await response.json();
-
-        appState = status;
-        updateUI();
-        updateConnectionStatus(true);
-    } catch (error) {
-        console.error('Erro ao atualizar status:', error);
-        updateConnectionStatus(false);
-    }
-}
-
-function updateUI() {
-    // Atualizar status
-    if (appState.is_running) {
-        statusDot.classList.add('active');
-        statusText.textContent = 'Conectado';
-        analysisStatus.textContent = 'Em execução';
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-    } else {
-        statusDot.classList.remove('active');
-        statusText.textContent = 'Conectado';
-        analysisStatus.textContent = 'Parado';
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
     }
 
-    // Atualizar informações do exercício
-    currentExercise.textContent = appState.current_exercise || 'Nenhum';
-    currentReps.textContent = appState.stats.current_reps || 0;
-}
-
-function updateConnectionStatus(connected) {
-    if (connected) {
-        statusDot.style.backgroundColor = '#2ecc71';
-        statusText.textContent = 'Conectado';
-    } else {
-        statusDot.style.backgroundColor = '#e74c3c';
-        statusText.textContent = 'Desconectado';
-    }
-}
-
-function handleVideoSourceChange(e) {
-    videoFileGroup.classList.toggle('hidden', e.target.value !== 'video');
-}
-
-async function startAnalysis() {
-    const exercise = exerciseSelect.value;
-    const useWebcam = document.querySelector('input[name="videoSource"]:checked').value === 'webcam';
-    const videoFile = useWebcam ? null : videoSelect.value;
-
-    if (!exercise) {
-        showError('Por favor, selecione um exercício');
-        return;
-    }
-
-    if (!useWebcam && !videoFile) {
-        showError('Por favor, selecione um arquivo de vídeo');
-        return;
-    }
-
-    try {
-        startBtn.disabled = true;
-
-        const response = await fetch(`${API_BASE_URL}/api/start`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                exercise: exercise,
-                use_webcam: useWebcam,
-                video_file: videoFile
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            showNotification('Análise iniciada com sucesso! A janela do OpenCV será aberta no computador.');
-
-            // Atualizar status após um breve delay
-            setTimeout(updateStatus, 1000);
+    setConnectionStatus(connected) {
+        if (connected) {
+            this.statusDot.classList.add('connected');
+            this.statusText.textContent = 'Conectado ao servidor de análise';
+            this.apiStatus.textContent = 'Conectado';
+            this.apiStatus.className = 'connection-status-indicator connected';
         } else {
-            showError(`Erro ao iniciar análise: ${result.message}`);
-            startBtn.disabled = false;
+            this.statusDot.classList.remove('connected');
+            this.statusText.textContent = 'Servidor de análise não encontrado';
+            this.apiStatus.textContent = 'Desconectado';
+            this.apiStatus.className = 'connection-status-indicator';
         }
-    } catch (error) {
-        showError(`Erro de conexão: ${error.message}`);
-        startBtn.disabled = false;
     }
-}
 
-async function stopAnalysis() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/stop`, {
-            method: 'POST'
-        });
+    async startStatusUpdates() {
+        setInterval(async () => {
+            if (!this.isConnected) {
+                await this.connectToAnalysisServer();
+                return;
+            }
 
-        const result = await response.json();
+            try {
+                const response = await fetch(this.apiUrl);
+                if (!response.ok) throw new Error('Resposta não OK');
 
-        if (result.success) {
-            showNotification('Análise parada com sucesso');
-            updateStatus();
+                const data = await response.json();
+                this.updateUI(data);
+                this.lastUpdate = Date.now();
+                this.updateLastUpdateTime();
+
+            } catch (error) {
+                console.error('Erro ao buscar status:', error);
+                this.setConnectionStatus(false);
+                this.isConnected = false;
+            }
+        }, 1000); // Atualizar a cada segundo
+    }
+
+    updateUI(data) {
+        // Atualizar informações básicas
+        this.exerciseName.textContent = data.exercise_name || 'Aguardando...';
+        this.repsCount.textContent = data.counter || 0;
+        this.repsCounter.textContent = data.counter || 0;
+        this.movementPhase.textContent = data.movement_phase || 'INICIANDO';
+        this.phaseText.textContent = data.movement_phase || 'INICIANDO';
+
+        // Atualizar score de postura
+        const score = data.posture_score || 100;
+        this.postureScore.textContent = score;
+        this.scoreFill.style.width = `${score}%`;
+
+        // Atualizar feedback de postura
+        this.updatePostureFeedback(data.posture_feedback, data.posture_feedback_type);
+
+        // Atualizar cor do score
+        if (score >= 80) {
+            this.scoreFill.style.background = 'linear-gradient(90deg, #4cc9f0, #4361ee)';
+        } else if (score >= 60) {
+            this.scoreFill.style.background = 'linear-gradient(90deg, #f8961e, #f3722c)';
         } else {
-            showError(`Erro ao parar análise: ${result.message}`);
+            this.scoreFill.style.background = 'linear-gradient(90deg, #f72585, #b5179e)';
         }
-    } catch (error) {
-        showError(`Erro de conexão: ${error.message}`);
+    }
+
+    updatePostureFeedback(message, type) {
+        const feedbackElement = this.postureFeedback;
+        const typeElement = this.postureFeedbackType;
+
+        // Atualizar mensagem
+        const icon = feedbackElement.querySelector('i');
+        const text = feedbackElement.querySelector('span');
+
+        // Definir ícone baseado no tipo
+        switch (type) {
+            case 'CORRETO':
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = '#4cc9f0';
+                text.style.color = '#4cc9f0';
+                break;
+            case 'ATENCAO':
+                icon.className = 'fas fa-exclamation-triangle';
+                icon.style.color = '#f8961e';
+                text.style.color = '#f8961e';
+                break;
+            case 'ERRO_CRITICO':
+                icon.className = 'fas fa-times-circle';
+                icon.style.color = '#f72585';
+                text.style.color = '#f72585';
+                break;
+            default:
+                icon.className = 'fas fa-info-circle';
+                icon.style.color = '#4895ef';
+                text.style.color = '#4895ef';
+        }
+
+        text.textContent = message || 'Aguardando análise...';
+
+        // Atualizar badge de tipo
+        let badgeClass = 'badge-info';
+        if (type === 'CORRETO') badgeClass = 'badge-correct';
+        if (type === 'ATENCAO') badgeClass = 'badge-warning';
+        if (type === 'ERRO_CRITICO') badgeClass = 'badge-error';
+
+        typeElement.innerHTML = `<span class="badge ${badgeClass}">${type || 'INFO'}</span>`;
+    }
+
+    updateLastUpdateTime() {
+        const now = new Date();
+        this.lastUpdateElement.textContent = now.toLocaleTimeString('pt-BR');
+    }
+
+    toggleFullscreen() {
+        const videoContainer = document.querySelector('.video-container');
+
+        if (!document.fullscreenElement) {
+            if (videoContainer.requestFullscreen) {
+                videoContainer.requestFullscreen();
+            } else if (videoContainer.webkitRequestFullscreen) {
+                videoContainer.webkitRequestFullscreen();
+            } else if (videoContainer.msRequestFullscreen) {
+                videoContainer.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+    }
+
+    refreshVideoStream() {
+        // Adicionar timestamp para evitar cache
+        const timestamp = new Date().getTime();
+        this.videoStream.src = `${this.videoServer}/video_feed?t=${timestamp}`;
+
+        // Mostrar notificação
+        this.showNotification('Streaming de vídeo atualizado');
+    }
+
+    showInstructions() {
+        this.instructionsModal.classList.add('active');
+    }
+
+    showLogs() {
+        // Em uma implementação futura, isso poderia abrir uma página de logs
+        this.showNotification('Funcionalidade de logs em desenvolvimento');
+    }
+
+    showNotification(message) {
+        // Criar notificação simples
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4361ee;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        `;
+
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
     }
 }
 
-function showError(message) {
-    errorMessage.textContent = message;
-    errorModal.classList.remove('hidden');
-}
-
-function showNotification(message) {
-    // Cria uma notificação simples
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #2ecc71;
-        color: white;
-        padding: 15px 20px;
-        border-radius: 5px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        z-index: 1000;
-        animation: slideIn 0.3s ease;
-    `;
-
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
-
-// Adicionar estilos de animação
+// Adicionar animações CSS
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
@@ -349,5 +340,30 @@ style.textContent = `
             opacity: 0;
         }
     }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
 `;
 document.head.appendChild(style);
+
+// Inicializar aplicação quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new PostureStreamingApp();
+});
+
+// Manipular mudanças de fullscreen
+document.addEventListener('fullscreenchange', () => {
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const icon = fullscreenBtn.querySelector('i');
+
+    if (document.fullscreenElement) {
+        icon.className = 'fas fa-compress';
+        fullscreenBtn.title = 'Sair da tela cheia';
+    } else {
+        icon.className = 'fas fa-expand';
+        fullscreenBtn.title = 'Tela cheia';
+    }
+});

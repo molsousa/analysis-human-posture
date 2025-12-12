@@ -3,150 +3,178 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Análise de Postura</title>
+    <title>Análise de Postura - Streaming</title>
     <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   </head>
   <body>
     <div class="container">
       <!-- Cabeçalho -->
       <header class="header">
-        <h1>📊 Análise de Postura</h1>
-        <p class="subtitle">Sistema de análise de exercícios de calistenia</p>
+        <h1><i class="fas fa-running"></i> Análise de Postura</h1>
+        <p class="subtitle">Streaming em tempo real da análise</p>
       </header>
 
-      <!-- Status -->
-      <div class="status-card">
-        <div class="status-header">
-          <h2>Status do Sistema</h2>
-          <div class="status-indicator">
-            <span class="status-dot" id="statusDot"></span>
-            <span id="statusText">Desconectado</span>
-          </div>
+      <!-- Status da Conexão -->
+      <div class="connection-status">
+        <div class="status-indicator">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Conectando ao servidor de análise...</span>
         </div>
-        <div class="status-info">
-          <div class="info-item">
-            <span class="info-label">Exercício:</span>
-            <span id="currentExercise">Nenhum</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Repetições:</span>
-            <span id="currentReps">0</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Status:</span>
-            <span id="analysisStatus">Parado</span>
-          </div>
+        <div class="connection-info">
+          <span>Servidor de vídeo:</span>
+          <code id="videoServer">localhost:5001</code>
         </div>
       </div>
 
-      <!-- Controles -->
-      <div class="control-card">
-        <h2>Controles</h2>
-
-        <div class="form-group">
-          <label for="exerciseSelect">Exercício:</label>
-          <select id="exerciseSelect" class="form-select">
-            <option value="">Carregando exercícios...</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Fonte de Vídeo:</label>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input type="radio" name="videoSource" value="webcam" checked />
-              <span class="radio-custom"></span>
-              Webcam
-            </label>
-            <label class="radio-label">
-              <input type="radio" name="videoSource" value="video" />
-              <span class="radio-custom"></span>
-              Arquivo de Vídeo
-            </label>
-          </div>
-          <div id="videoFileGroup" class="hidden">
-            <select id="videoSelect" class="form-select">
-              <option value="">Carregando vídeos...</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="button-group">
-          <button id="startBtn" class="btn btn-primary">▶ Iniciar Análise</button>
-          <button id="stopBtn" class="btn btn-danger" disabled>⏹ Parar</button>
-          <button id="refreshBtn" class="btn btn-secondary">🔄 Atualizar</button>
-        </div>
-      </div>
-
-      <!-- Informações -->
-      <div class="info-grid">
-        <!-- Instruções -->
-        <div class="info-card">
-          <h2>📋 Instruções</h2>
-          <ol class="instructions">
-            <li>Selecione um exercício na lista</li>
-            <li>Escolha usar a webcam ou um arquivo de vídeo</li>
-            <li>Clique em "Iniciar Análise"</li>
-            <li>A janela do OpenCV será aberta no computador</li>
-            <li>Execute o exercício na frente da câmera</li>
-            <li>O sistema fornecerá feedback em tempo real</li>
-            <li>Use o celular para visualizar esta interface</li>
-          </ol>
-
-          <div class="connection-info">
-            <h3>🌐 Conexão</h3>
-            <p>Para acessar pelo celular:</p>
-            <p class="ip-address">
-              URL: <code id="serverUrl">http://localhost:5000</code>
-            </p>
-            <p class="note">Use o mesmo IP do computador na rede Wi-Fi</p>
-          </div>
-        </div>
-
-        <!-- Logs -->
-        <div class="info-card">
-          <h2>📝 Logs da Sessão</h2>
-          <div class="logs-container">
-            <div class="logs-header">
-              <h3>Relatórios Disponíveis</h3>
-              <button id="refreshLogsBtn" class="btn btn-sm">↻</button>
+      <!-- Conteúdo Principal -->
+      <div class="main-content">
+        <!-- Coluna Esquerda: Streaming de Vídeo -->
+        <div class="video-column">
+          <div class="video-card">
+            <div class="video-header">
+              <h2><i class="fas fa-video"></i> Visualização da Análise</h2>
+              <div class="video-actions">
+                <button id="fullscreenBtn" class="btn btn-sm"><i class="fas fa-expand"></i></button>
+                <button id="refreshBtn" class="btn btn-sm"><i class="fas fa-redo"></i></button>
+              </div>
             </div>
-            <div class="logs-list" id="logsList">
-              <div class="log-placeholder">Carregando logs...</div>
+            <div class="video-container">
+              <img id="videoStream" src="http://localhost:5001/video_feed" alt="Streaming de análise" class="video-frame" />
+              <div class="video-overlay">
+                <div class="overlay-item phase">
+                  <i class="fas fa-sync-alt"></i>
+                  <span id="phaseText">INICIANDO</span>
+                </div>
+                <div class="overlay-item reps">
+                  <i class="fas fa-repeat"></i>
+                  <span id="repsCounter">0</span>
+                </div>
+              </div>
+            </div>
+            <div class="video-info">
+              <p>
+                <i class="fas fa-info-circle"></i> A imagem mostra a análise em tempo real sendo executada no notebook.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coluna Direita: Informações de Análise -->
+        <div class="info-column">
+          <!-- Card de Status da Análise -->
+          <div class="card analysis-status">
+            <h2><i class="fas fa-chart-line"></i> Status da Análise</h2>
+            <div class="status-grid">
+              <div class="status-item">
+                <div class="status-label">Exercício:</div>
+                <div class="status-value" id="exerciseName">Aguardando...</div>
+              </div>
+              <div class="status-item">
+                <div class="status-label">Repetições:</div>
+                <div class="status-value reps-count" id="repsCount">0</div>
+              </div>
+              <div class="status-item">
+                <div class="status-label">Fase do Movimento:</div>
+                <div class="status-value" id="movementPhase">INICIANDO</div>
+              </div>
+              <div class="status-item">
+                <div class="status-label">Score de Postura:</div>
+                <div class="status-value">
+                  <div class="score-container">
+                    <span id="postureScore">100</span>
+                    <span class="score-max">/100</span>
+                    <div class="score-bar">
+                      <div class="score-fill" id="scoreFill"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="feedback-info">
-            <h3>💡 Informações</h3>
-            <p>
-              Os logs são salvos automaticamente na pasta <code>logs/</code>
-            </p>
-            <p>Cada sessão gera um arquivo com data e hora</p>
+          <!-- Card de Feedback de Postura -->
+          <div class="card feedback-card">
+            <h2><i class="fas fa-comment-medical"></i> Feedback de Postura</h2>
+            <div class="feedback-type" id="postureFeedbackType">
+              <span class="badge badge-info">INFO</span>
+            </div>
+            <div class="feedback-message" id="postureFeedback">
+              <i class="fas fa-info-circle"></i>
+              <span>Aguardando início da análise...</span>
+            </div>
+            <div class="feedback-tips">
+              <h3><i class="fas fa-lightbulb"></i> Dicas para Melhorar:</h3>
+              <ul id="feedbackTips">
+                <li>Mantenha as costas retas durante o exercício</li>
+                <li>Execute movimentos completos e controlados</li>
+                <li>Evite arquear as costas</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Card de Informações do Sistema -->
+          <div class="card system-info">
+            <h2><i class="fas fa-cogs"></i> Informações do Sistema</h2>
+            <div class="system-grid">
+              <div class="system-item">
+                <div class="system-label">Status da Conexão:</div>
+                <div class="system-value">
+                  <span class="connection-status-indicator" id="apiStatus">Verificando...</span>
+                </div>
+              </div>
+              <div class="system-item">
+                <div class="system-label">Última Atualização:</div>
+                <div class="system-value" id="lastUpdate">--:--:--</div>
+              </div>
+              <div class="system-item">
+                <div class="system-label">FPS:</div>
+                <div class="system-value" id="fpsCounter">0</div>
+              </div>
+              <div class="system-item">
+                <div class="system-label">Tempo de Sessão:</div>
+                <div class="system-value" id="sessionTime">00:00</div>
+              </div>
+            </div>
+            <div class="system-actions">
+              <button id="instructionsBtn" class="btn"><i class="fas fa-question-circle"></i> Instruções</button>
+              <button id="logsBtn" class="btn"><i class="fas fa-clipboard-list"></i> Ver Logs</button>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Rodapé -->
       <footer class="footer">
-        <p>Sistema de Análise de Postura - Desenvolvido para calistenia</p>
+        <p>Sistema de Análise de Postura - Streaming em tempo real</p>
         <p class="footer-note">
-          <small>Executando em: <span id="serverTime">--:--:--</span></small>
+          Executando em: <span id="currentTime">--:--:--</span> | Acesse pelo notebook: <code>python main.py --exercise exercise_templates/pushup.json --video 0</code>
         </p>
       </footer>
     </div>
 
-    <!-- Modal de Erro -->
-    <div id="errorModal" class="modal hidden">
+    <!-- Modal de Instruções -->
+    <div id="instructionsModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>⚠️ Erro</h3>
+          <h3><i class="fas fa-question-circle"></i> Como Usar</h3>
           <button class="modal-close">&times;</button>
         </div>
         <div class="modal-body">
-          <p id="errorMessage">Ocorreu um erro.</p>
+          <ol class="instructions-list">
+            <li>
+              No notebook, execute: <code>python main.py --exercise exercise_templates/pushup.json --video 0</code>
+            </li>
+            <li>Aguarde a janela do OpenCV abrir no notebook</li>
+            <li>Posicione-se na frente da câmera do notebook</li>
+            <li>Execute o exercício normalmente</li>
+            <li>Nesta página, você verá o streaming da análise</li>
+            <li>O feedback de postura e contagem aparecerão separadamente</li>
+            <li>Para usar em outro dispositivo, acesse o IP do notebook na porta 5000</li>
+          </ol>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-primary modal-close-btn">OK</button>
+          <button class="btn btn-primary modal-close-btn">Entendi</button>
         </div>
       </div>
     </div>
