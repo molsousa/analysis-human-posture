@@ -9,173 +9,114 @@
   </head>
   <body>
     <div class="container">
-      <!-- Cabeçalho -->
-      <header class="header">
-        <h1><i class="fas fa-running"></i> Análise de Postura</h1>
-        <p class="subtitle">Streaming em tempo real da análise</p>
-      </header>
+      <div class="header">
+        <h1><i class="fas fa-running"></i> Análise de Postura em Tempo Real</h1>
+        <p class="subtitle">Streaming da análise executada no notebook</p>
+      </div>
 
-      <!-- Status da Conexão -->
-      <div class="connection-status">
-        <div class="status-indicator">
-          <span class="status-dot" id="statusDot"></span>
-          <span id="statusText">Conectando ao servidor de análise...</span>
+      <div class="status-bar">
+        <div class="status-item">
+          <div class="status-label">Exercício</div>
+          <div class="status-value" id="exerciseName">Aguardando...</div>
         </div>
-        <div class="connection-info">
-          <span>Servidor de vídeo:</span>
-          <code id="videoServer">localhost:5001</code>
+        <div class="status-item">
+          <div class="status-label">Repetições Totais</div>
+          <div class="status-value" id="totalReps">0</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Status</div>
+          <div class="status-value" id="analysisStatus">Conectando...</div>
         </div>
       </div>
 
-      <!-- Conteúdo Principal -->
-      <div class="main-content">
-        <!-- Coluna Esquerda: Streaming de Vídeo -->
-        <div class="video-column">
-          <div class="video-card">
-            <div class="video-header">
-              <h2><i class="fas fa-video"></i> Visualização da Análise</h2>
-              <div class="video-actions">
-                <button id="fullscreenBtn" class="btn btn-sm"><i class="fas fa-expand"></i></button>
-                <button id="refreshBtn" class="btn btn-sm"><i class="fas fa-redo"></i></button>
-              </div>
-            </div>
-            <div class="video-container">
-              <img id="videoStream" src="http://localhost:5001/video_feed" alt="Streaming de análise" class="video-frame" />
-              <div class="video-overlay">
-                <div class="overlay-item phase">
-                  <i class="fas fa-sync-alt"></i>
-                  <span id="phaseText">INICIANDO</span>
-                </div>
-                <div class="overlay-item reps">
-                  <i class="fas fa-repeat"></i>
-                  <span id="repsCounter">0</span>
-                </div>
-              </div>
-            </div>
-            <div class="video-info">
-              <p>
-                <i class="fas fa-info-circle"></i> A imagem mostra a análise em tempo real sendo executada no notebook.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Coluna Direita: Informações de Análise -->
-        <div class="info-column">
-          <!-- Card de Status da Análise -->
-          <div class="card analysis-status">
-            <h2><i class="fas fa-chart-line"></i> Status da Análise</h2>
-            <div class="status-grid">
-              <div class="status-item">
-                <div class="status-label">Exercício:</div>
-                <div class="status-value" id="exerciseName">Aguardando...</div>
-              </div>
-              <div class="status-item">
-                <div class="status-label">Repetições:</div>
-                <div class="status-value reps-count" id="repsCount">0</div>
-              </div>
-              <div class="status-item">
-                <div class="status-label">Fase do Movimento:</div>
-                <div class="status-value" id="movementPhase">INICIANDO</div>
-              </div>
-              <div class="status-item">
-                <div class="status-label">Score de Postura:</div>
-                <div class="status-value">
-                  <div class="score-container">
-                    <span id="postureScore">100</span>
-                    <span class="score-max">/100</span>
-                    <div class="score-bar">
-                      <div class="score-fill" id="scoreFill"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card de Feedback de Postura -->
-          <div class="card feedback-card">
-            <h2><i class="fas fa-comment-medical"></i> Feedback de Postura</h2>
-            <div class="feedback-type" id="postureFeedbackType">
-              <span class="badge badge-info">INFO</span>
-            </div>
-            <div class="feedback-message" id="postureFeedback">
-              <i class="fas fa-info-circle"></i>
-              <span>Aguardando início da análise...</span>
-            </div>
-            <div class="feedback-tips">
-              <h3><i class="fas fa-lightbulb"></i> Dicas para Melhorar:</h3>
-              <ul id="feedbackTips">
-                <li>Mantenha as costas retas durante o exercício</li>
-                <li>Execute movimentos completos e controlados</li>
-                <li>Evite arquear as costas</li>
-              </ul>
-            </div>
-          </div>
-
-          <!-- Card de Informações do Sistema -->
-          <div class="card system-info">
-            <h2><i class="fas fa-cogs"></i> Informações do Sistema</h2>
-            <div class="system-grid">
-              <div class="system-item">
-                <div class="system-label">Status da Conexão:</div>
-                <div class="system-value">
-                  <span class="connection-status-indicator" id="apiStatus">Verificando...</span>
-                </div>
-              </div>
-              <div class="system-item">
-                <div class="system-label">Última Atualização:</div>
-                <div class="system-value" id="lastUpdate">--:--:--</div>
-              </div>
-              <div class="system-item">
-                <div class="system-label">FPS:</div>
-                <div class="system-value" id="fpsCounter">0</div>
-              </div>
-              <div class="system-item">
-                <div class="system-label">Tempo de Sessão:</div>
-                <div class="system-value" id="sessionTime">00:00</div>
-              </div>
-            </div>
-            <div class="system-actions">
-              <button id="instructionsBtn" class="btn"><i class="fas fa-question-circle"></i> Instruções</button>
-              <button id="logsBtn" class="btn"><i class="fas fa-clipboard-list"></i> Ver Logs</button>
-            </div>
+      <div class="video-container">
+        <img id="videoStream" src="" alt="Streaming de análise" class="video-frame" />
+        <div class="video-overlay">
+          <div class="overlay-item" id="phaseText">Fase: INICIANDO</div>
+          <div class="overlay-item overlay-reps">
+            <i class="fas fa-repeat"></i>
+            <span id="overlayReps">0</span>
           </div>
         </div>
       </div>
 
-      <!-- Rodapé -->
-      <footer class="footer">
-        <p>Sistema de Análise de Postura - Streaming em tempo real</p>
-        <p class="footer-note">
-          Executando em: <span id="currentTime">--:--:--</span> | Acesse pelo notebook: <code>python main.py --exercise exercise_templates/pushup.json --video 0</code>
-        </p>
-      </footer>
-    </div>
+      <div class="info-panels">
+        <!-- Painel de Feedback de Postura -->
+        <div class="panel">
+          <h2 class="panel-title"><i class="fas fa-chart-line"></i> Feedback de Postura</h2>
+          <div class="feedback-box feedback-posture" id="postureFeedback">
+            <div class="feedback-icon">
+              <i class="fas fa-chart-bar" id="postureIcon"></i>
+            </div>
+            <div class="feedback-content">
+              <div id="postureText">Aguardando análise de postura...</div>
+              <div class="score-container">
+                <div class="score-value" id="postureScore">100</div>
+                <div class="score-max">/100</div>
+                <div class="score-bar">
+                  <div class="score-fill" id="scoreFill" style="width: 100%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-    <!-- Modal de Instruções -->
-    <div id="instructionsModal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3><i class="fas fa-question-circle"></i> Como Usar</h3>
-          <button class="modal-close">&times;</button>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value" id="goodReps">0</div>
+              <div class="stat-label">
+                <i class="fas fa-check-circle"></i> Boa Postura
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="badReps">0</div>
+              <div class="stat-label">
+                <i class="fas fa-exclamation-triangle"></i> Postura Ruim
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="accuracy">0%</div>
+              <div class="stat-label">
+                <i class="fas fa-bullseye"></i> Precisão
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="modal-body">
-          <ol class="instructions-list">
-            <li>
-              No notebook, execute: <code>python main.py --exercise exercise_templates/pushup.json --video 0</code>
-            </li>
-            <li>Aguarde a janela do OpenCV abrir no notebook</li>
-            <li>Posicione-se na frente da câmera do notebook</li>
-            <li>Execute o exercício normalmente</li>
-            <li>Nesta página, você verá o streaming da análise</li>
-            <li>O feedback de postura e contagem aparecerão separadamente</li>
-            <li>Para usar em outro dispositivo, acesse o IP do notebook na porta 5000</li>
-          </ol>
+
+        <!-- Painel de Feedback de Repetição -->
+        <div class="panel">
+          <h2 class="panel-title"><i class="fas fa-sync-alt"></i> Feedback de Repetição</h2>
+          <div class="feedback-box" id="repFeedback">
+            <div class="feedback-icon">
+              <i class="fas fa-sync" id="repIcon"></i>
+            </div>
+            <div class="feedback-content" id="repText">Aguardando conclusão de repetição...</div>
+          </div>
+
+          <h2 class="panel-title"><i class="fas fa-info-circle"></i> Informações do Sistema</h2>
+          <div class="connection-status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="connectionText">Conectando ao servidor de análise...</span>
+          </div>
+
+          <div class="system-info">
+            <p>
+              <i class="fas fa-mobile-alt"></i> Acessível em qualquer dispositivo na rede
+            </p>
+            <p>
+              <i class="fas fa-laptop"></i> Execute no notebook:
+            </p>
+            <code>python main.py --exercise exercise_templates/pushup.json --video 0</code>
+            <p>
+              <i class="fas fa-globe"></i> Acesse pelo celular:
+            </p>
+            <div class="server-url" id="serverAddress">http://localhost:5000</div>
+          </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary modal-close-btn">Entendi</button>
-        </div>
+      </div>
+
+      <div class="footer">
+        <p>Sistema de Análise de Postura - Separação de feedback e contagem</p>
+        <p>Conta TODAS as repetições, mas fornece feedback separado sobre a qualidade da postura</p>
       </div>
     </div>
 

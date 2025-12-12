@@ -1,13 +1,21 @@
+// Configurações da aplicação
+const AppConfig = {
+    videoServerPort: 5001,
+    updateInterval: 1000, // ms
+    connectionTimeout: 5000, // ms
+    reconnectDelay: 2000 // ms
+};
+
 class PostureStreamingApp {
     constructor() {
-        this.videoServer = 'http://localhost:5001';
+        this.videoServer = `http://${window.location.hostname}:${AppConfig.videoServerPort}`;
         this.apiUrl = `${this.videoServer}/api/status`;
         this.isConnected = false;
-        this.lastUpdate = Date.now();
-        this.sessionStartTime = Date.now();
-        this.fps = 0;
-        this.frameCount = 0;
-        this.fpsInterval = null;
+        this.goodReps = 0;
+        this.badReps = 0;
+        this.totalReps = 0;
+        this.connectionAttempts = 0;
+        this.maxConnectionAttempts = 5;
 
         this.initializeElements();
         this.setupEventListeners();
@@ -16,320 +24,323 @@ class PostureStreamingApp {
 
     initializeElements() {
         // Elementos de status
-        this.statusDot = document.getElementById('statusDot');
-        this.statusText = document.getElementById('statusText');
-        this.apiStatus = document.getElementById('apiStatus');
-
-        // Elementos de vídeo
-        this.videoStream = document.getElementById('videoStream');
-        this.fullscreenBtn = document.getElementById('fullscreenBtn');
-        this.refreshBtn = document.getElementById('refreshBtn');
-
-        // Elementos de análise
         this.exerciseName = document.getElementById('exerciseName');
-        this.repsCount = document.getElementById('repsCount');
-        this.repsCounter = document.getElementById('repsCounter');
-        this.movementPhase = document.getElementById('movementPhase');
+        this.totalReps = document.getElementById('totalReps');
+        this.analysisStatus = document.getElementById('analysisStatus');
+        this.overlayReps = document.getElementById('overlayReps');
         this.phaseText = document.getElementById('phaseText');
+
+        // Elementos de feedback de postura
+        this.postureFeedback = document.getElementById('postureFeedback');
+        this.postureText = document.getElementById('postureText');
+        this.postureIcon = document.getElementById('postureIcon');
         this.postureScore = document.getElementById('postureScore');
         this.scoreFill = document.getElementById('scoreFill');
-        this.postureFeedback = document.getElementById('postureFeedback');
-        this.postureFeedbackType = document.getElementById('postureFeedbackType');
 
-        // Elementos de sistema
-        this.lastUpdateElement = document.getElementById('lastUpdate');
-        this.fpsCounter = document.getElementById('fpsCounter');
-        this.sessionTimeElement = document.getElementById('sessionTime');
-        this.currentTimeElement = document.getElementById('currentTime');
+        // Elementos de feedback de repetição
+        this.repFeedback = document.getElementById('repFeedback');
+        this.repText = document.getElementById('repText');
+        this.repIcon = document.getElementById('repIcon');
 
-        // Modal
-        this.instructionsModal = document.getElementById('instructionsModal');
-        this.instructionsBtn = document.getElementById('instructionsBtn');
-        this.logsBtn = document.getElementById('logsBtn');
-        this.modalCloseButtons = document.querySelectorAll('.modal-close, .modal-close-btn');
+        // Elementos de estatísticas
+        this.goodRepsElement = document.getElementById('goodReps');
+        this.badRepsElement = document.getElementById('badReps');
+        this.accuracyElement = document.getElementById('accuracy');
+
+        // Elementos de conexão
+        this.statusDot = document.getElementById('statusDot');
+        this.connectionText = document.getElementById('connectionText');
+        this.serverAddress = document.getElementById('serverAddress');
+
+        // Elemento de vídeo
+        this.videoStream = document.getElementById('videoStream');
     }
 
     setupEventListeners() {
-        // Botões de vídeo
-        this.fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
-        this.refreshBtn.addEventListener('click', () => this.refreshVideoStream());
+        // Recarregar vídeo em caso de erro
+        this.videoStream.addEventListener('error', () => this.handleVideoError());
 
-        // Botões de ação
-        this.instructionsBtn.addEventListener('click', () => this.showInstructions());
-        this.logsBtn.addEventListener('click', () => this.showLogs());
-
-        // Fechar modal
-        this.modalCloseButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.instructionsModal.classList.remove('active');
-            });
-        });
-
-        // Fechar modal com ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.instructionsModal.classList.contains('active')) {
-                this.instructionsModal.classList.remove('active');
+        // Recarregar página se conexão for perdida por muito tempo
+        setInterval(() => {
+            if (!this.isConnected && this.connectionAttempts > this.maxConnectionAttempts) {
+                console.log('Reconectando à aplicação...');
+                location.reload();
             }
-        });
-
-        // Contador de FPS do vídeo
-        this.videoStream.addEventListener('load', () => {
-            this.frameCount++;
-        });
+        }, 30000); // 30 segundos
     }
 
     initializeApp() {
-        // Atualizar horário atual
-        this.updateCurrentTime();
-        setInterval(() => this.updateCurrentTime(), 1000);
-
-        // Iniciar contador de FPS
-        this.startFpsCounter();
-
-        // Iniciar timer da sessão
-        this.startSessionTimer();
-
-        // Conectar ao servidor de análise
-        this.connectToAnalysisServer();
-
-        // Iniciar atualização de status
+        this.updateServerAddress();
+        this.initializeVideoStream();
         this.startStatusUpdates();
-
-        // Mostrar instruções inicialmente
-        setTimeout(() => this.showInstructions(), 1000);
+        this.showWelcomeMessage();
     }
 
-    updateCurrentTime() {
-        const now = new Date();
-        this.currentTimeElement.textContent = now.toLocaleTimeString('pt-BR');
+    updateServerAddress() {
+        const hostname = window.location.hostname;
+        const port = window.location.port || '80';
+        const protocol = window.location.protocol;
+        this.serverAddress.textContent = `${protocol}//${hostname}:${port}`;
     }
 
-    startFpsCounter() {
-        this.fpsInterval = setInterval(() => {
-            this.fps = this.frameCount;
-            this.frameCount = 0;
-            this.fpsCounter.textContent = this.fps;
-        }, 1000);
+    initializeVideoStream() {
+        // Configurar streaming de vídeo com timestamp para evitar cache
+        const timestamp = new Date().getTime();
+        this.videoStream.src = `${this.videoServer}/video_feed?t=${timestamp}`;
+
+        // Adicionar animação de entrada
+        this.videoStream.classList.add('slide-in');
     }
 
-    startSessionTimer() {
-        setInterval(() => {
-            const elapsed = Math.floor((Date.now() - this.sessionStartTime) / 1000);
-            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
-            const seconds = (elapsed % 60).toString().padStart(2, '0');
-            this.sessionTimeElement.textContent = `${minutes}:${seconds}`;
-        }, 1000);
-    }
-
-    async connectToAnalysisServer() {
-        try {
-            const response = await fetch(this.apiUrl, { timeout: 5000 });
-
-            if (response.ok) {
-                this.setConnectionStatus(true);
-                this.isConnected = true;
-            } else {
-                this.setConnectionStatus(false);
-                this.isConnected = false;
-            }
-        } catch (error) {
-            this.setConnectionStatus(false);
-            this.isConnected = false;
-            console.warn('Não foi possível conectar ao servidor de análise:', error.message);
-        }
-    }
-
-    setConnectionStatus(connected) {
-        if (connected) {
-            this.statusDot.classList.add('connected');
-            this.statusText.textContent = 'Conectado ao servidor de análise';
-            this.apiStatus.textContent = 'Conectado';
-            this.apiStatus.className = 'connection-status-indicator connected';
-        } else {
-            this.statusDot.classList.remove('connected');
-            this.statusText.textContent = 'Servidor de análise não encontrado';
-            this.apiStatus.textContent = 'Desconectado';
-            this.apiStatus.className = 'connection-status-indicator';
-        }
+    handleVideoError() {
+        console.warn('Erro no streaming de vídeo, tentando reconectar...');
+        setTimeout(() => {
+            const timestamp = new Date().getTime();
+            this.videoStream.src = `${this.videoServer}/video_feed?t=${timestamp}`;
+        }, AppConfig.reconnectDelay);
     }
 
     async startStatusUpdates() {
         setInterval(async () => {
-            if (!this.isConnected) {
-                await this.connectToAnalysisServer();
-                return;
-            }
+            await this.updateStatus();
+        }, AppConfig.updateInterval);
+    }
 
-            try {
-                const response = await fetch(this.apiUrl);
-                if (!response.ok) throw new Error('Resposta não OK');
+    async updateStatus() {
+        try {
+            const response = await fetch(this.apiUrl, {
+                signal: AbortSignal.timeout(AppConfig.connectionTimeout)
+            });
 
-                const data = await response.json();
-                this.updateUI(data);
-                this.lastUpdate = Date.now();
-                this.updateLastUpdateTime();
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-            } catch (error) {
-                console.error('Erro ao buscar status:', error);
-                this.setConnectionStatus(false);
-                this.isConnected = false;
-            }
-        }, 1000); // Atualizar a cada segundo
+            const data = await response.json();
+            this.updateUI(data);
+            this.setConnectionStatus(true);
+            this.connectionAttempts = 0;
+
+        } catch (error) {
+            console.warn('Erro ao conectar com o servidor:', error.message);
+            this.setConnectionStatus(false);
+            this.connectionAttempts++;
+        }
     }
 
     updateUI(data) {
         // Atualizar informações básicas
         this.exerciseName.textContent = data.exercise_name || 'Aguardando...';
-        this.repsCount.textContent = data.counter || 0;
-        this.repsCounter.textContent = data.counter || 0;
-        this.movementPhase.textContent = data.movement_phase || 'INICIANDO';
-        this.phaseText.textContent = data.movement_phase || 'INICIANDO';
-
-        // Atualizar score de postura
-        const score = data.posture_score || 100;
-        this.postureScore.textContent = score;
-        this.scoreFill.style.width = `${score}%`;
+        this.totalReps.textContent = data.counter || 0;
+        this.overlayReps.textContent = data.counter || 0;
+        this.phaseText.textContent = `Fase: ${data.movement_phase || 'INICIANDO'}`;
+        this.analysisStatus.textContent = 'Analisando...';
 
         // Atualizar feedback de postura
-        this.updatePostureFeedback(data.posture_feedback, data.posture_feedback_type);
+        this.updatePostureFeedback(
+            data.posture_feedback,
+            data.posture_feedback_type,
+            data.posture_score
+        );
 
-        // Atualizar cor do score
+        // Atualizar feedback de repetição
+        this.updateRepFeedback(data.rep_feedback, data.rep_feedback_type);
+
+        // Atualizar estatísticas
+        this.updateStats(data);
+    }
+
+    updatePostureFeedback(message, type, score) {
+        if (!message) return;
+
+        this.postureText.textContent = message;
+        this.postureScore.textContent = score || 100;
+        this.scoreFill.style.width = `${score || 100}%`;
+
+        // Atualizar classe CSS baseada no tipo
+        this.updateFeedbackBoxClass(this.postureFeedback, type);
+
+        // Atualizar ícone baseado no tipo
+        this.updateFeedbackIcon(this.postureIcon, type);
+
+        // Atualizar cores do score
+        this.updateScoreColors(score);
+    }
+
+    updateRepFeedback(message, type) {
+        if (!message) {
+            this.repFeedback.classList.add('hidden');
+            return;
+        }
+
+        this.repFeedback.classList.remove('hidden');
+        this.repText.textContent = message;
+
+        // Atualizar classe CSS baseada no tipo
+        this.updateFeedbackBoxClass(this.repFeedback, type);
+
+        // Atualizar ícone baseado no tipo
+        this.updateFeedbackIcon(this.repIcon, type);
+
+        // Contar repetições boas/ruins
+        this.countRepQuality(type);
+    }
+
+    updateFeedbackBoxClass(element, type) {
+        // Remover todas as classes de feedback
+        element.classList.remove(
+            'feedback-posture',
+            'feedback-correct',
+            'feedback-warning',
+            'feedback-error'
+        );
+
+        // Adicionar classe baseada no tipo
+        switch (type) {
+            case 'CORRETO':
+                element.classList.add('feedback-correct');
+                break;
+            case 'ATENCAO':
+                element.classList.add('feedback-warning');
+                break;
+            case 'ERRO_CRITICO':
+                element.classList.add('feedback-error');
+                break;
+            default:
+                element.classList.add('feedback-posture');
+        }
+    }
+
+    updateFeedbackIcon(iconElement, type) {
+        // Atualizar ícone baseado no tipo
+        switch (type) {
+            case 'CORRETO':
+                iconElement.className = 'fas fa-check-circle';
+                iconElement.style.color = '#4cc9f0';
+                break;
+            case 'ATENCAO':
+                iconElement.className = 'fas fa-exclamation-triangle';
+                iconElement.style.color = '#f8961e';
+                break;
+            case 'ERRO_CRITICO':
+                iconElement.className = 'fas fa-times-circle';
+                iconElement.style.color = '#f72585';
+                break;
+            default:
+                iconElement.className = 'fas fa-chart-bar';
+                iconElement.style.color = '#4361ee';
+        }
+    }
+
+    updateScoreColors(score) {
+        // Atualizar cores do score e da barra
         if (score >= 80) {
+            this.postureScore.style.color = '#4cc9f0';
             this.scoreFill.style.background = 'linear-gradient(90deg, #4cc9f0, #4361ee)';
         } else if (score >= 60) {
+            this.postureScore.style.color = '#f8961e';
             this.scoreFill.style.background = 'linear-gradient(90deg, #f8961e, #f3722c)';
         } else {
+            this.postureScore.style.color = '#f72585';
             this.scoreFill.style.background = 'linear-gradient(90deg, #f72585, #b5179e)';
         }
     }
 
-    updatePostureFeedback(message, type) {
-        const feedbackElement = this.postureFeedback;
-        const typeElement = this.postureFeedbackType;
-
-        // Atualizar mensagem
-        const icon = feedbackElement.querySelector('i');
-        const text = feedbackElement.querySelector('span');
-
-        // Definir ícone baseado no tipo
-        switch (type) {
-            case 'CORRETO':
-                icon.className = 'fas fa-check-circle';
-                icon.style.color = '#4cc9f0';
-                text.style.color = '#4cc9f0';
-                break;
-            case 'ATENCAO':
-                icon.className = 'fas fa-exclamation-triangle';
-                icon.style.color = '#f8961e';
-                text.style.color = '#f8961e';
-                break;
-            case 'ERRO_CRITICO':
-                icon.className = 'fas fa-times-circle';
-                icon.style.color = '#f72585';
-                text.style.color = '#f72585';
-                break;
-            default:
-                icon.className = 'fas fa-info-circle';
-                icon.style.color = '#4895ef';
-                text.style.color = '#4895ef';
+    countRepQuality(type) {
+        // Contar repetições boas e ruins baseadas no feedback
+        if (type === 'CORRETO') {
+            this.goodReps++;
+            this.goodRepsElement.textContent = this.goodReps;
+        } else if (type === 'ATENCAO' || type === 'ERRO_CRITICO') {
+            this.badReps++;
+            this.badRepsElement.textContent = this.badReps;
         }
 
-        text.textContent = message || 'Aguardando análise...';
-
-        // Atualizar badge de tipo
-        let badgeClass = 'badge-info';
-        if (type === 'CORRETO') badgeClass = 'badge-correct';
-        if (type === 'ATENCAO') badgeClass = 'badge-warning';
-        if (type === 'ERRO_CRITICO') badgeClass = 'badge-error';
-
-        typeElement.innerHTML = `<span class="badge ${badgeClass}">${type || 'INFO'}</span>`;
+        // Atualizar precisão
+        this.updateAccuracy();
     }
 
-    updateLastUpdateTime() {
-        const now = new Date();
-        this.lastUpdateElement.textContent = now.toLocaleTimeString('pt-BR');
-    }
-
-    toggleFullscreen() {
-        const videoContainer = document.querySelector('.video-container');
-
-        if (!document.fullscreenElement) {
-            if (videoContainer.requestFullscreen) {
-                videoContainer.requestFullscreen();
-            } else if (videoContainer.webkitRequestFullscreen) {
-                videoContainer.webkitRequestFullscreen();
-            } else if (videoContainer.msRequestFullscreen) {
-                videoContainer.msRequestFullscreen();
-            }
+    updateAccuracy() {
+        const total = this.goodReps + this.badReps;
+        if (total > 0) {
+            const accuracy = Math.round((this.goodReps / total) * 100);
+            this.accuracyElement.textContent = `${accuracy}%`;
         } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
+            this.accuracyElement.textContent = '0%';
         }
     }
 
-    refreshVideoStream() {
-        // Adicionar timestamp para evitar cache
-        const timestamp = new Date().getTime();
-        this.videoStream.src = `${this.videoServer}/video_feed?t=${timestamp}`;
-
-        // Mostrar notificação
-        this.showNotification('Streaming de vídeo atualizado');
+    updateStats(data) {
+        // Em uma implementação real, você buscaria estatísticas do servidor
+        // Por enquanto, usamos apenas as contagens locais
+        this.totalReps = data.counter || 0;
     }
 
-    showInstructions() {
-        this.instructionsModal.classList.add('active');
+    setConnectionStatus(connected) {
+        if (connected) {
+            this.statusDot.classList.add('connected');
+            this.connectionText.textContent = 'Conectado ao servidor de análise';
+            this.isConnected = true;
+        } else {
+            this.statusDot.classList.remove('connected');
+            this.connectionText.textContent = 'Tentando conectar ao servidor...';
+            this.isConnected = false;
+        }
     }
 
-    showLogs() {
-        // Em uma implementação futura, isso poderia abrir uma página de logs
-        this.showNotification('Funcionalidade de logs em desenvolvimento');
-    }
-
-    showNotification(message) {
-        // Criar notificação simples
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #4361ee;
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            z-index: 1000;
-            animation: slideIn 0.3s ease;
-        `;
-
-        notification.textContent = message;
-        document.body.appendChild(notification);
-
+    showWelcomeMessage() {
+        // Mostrar mensagem de boas-vindas após 1 segundo
         setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
+            console.log('Aplicação de streaming de análise de postura inicializada!');
+            console.log(`Servidor de vídeo: ${this.videoServer}`);
+            console.log(`API: ${this.apiUrl}`);
+        }, 1000);
     }
 }
 
-// Adicionar animações CSS
+// Inicializar aplicação quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        window.app = new PostureStreamingApp();
+        console.log('Aplicação inicializada com sucesso!');
+    } catch (error) {
+        console.error('Erro ao inicializar a aplicação:', error);
+        showError('Falha ao inicializar a aplicação. Recarregue a página.');
+    }
+});
+
+// Função para mostrar erros na interface
+function showError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #f72585;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        z-index: 10000;
+        max-width: 400px;
+        animation: slideIn 0.3s ease;
+    `;
+
+    errorDiv.innerHTML = `
+        <strong><i class="fas fa-exclamation-circle"></i> Erro</strong>
+        <p style="margin-top: 8px; font-size: 14px;">${message}</p>
+    `;
+
+    document.body.appendChild(errorDiv);
+
+    // Remover após 5 segundos
+    setTimeout(() => {
+        errorDiv.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => errorDiv.remove(), 300);
+    }, 5000);
+}
+
+// Adicionar animação de saída ao CSS global
 const style = document.createElement('style');
 style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
     @keyframes slideOut {
         from {
             transform: translateX(0);
@@ -340,30 +351,5 @@ style.textContent = `
             opacity: 0;
         }
     }
-    
-    @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.5; }
-        100% { opacity: 1; }
-    }
 `;
 document.head.appendChild(style);
-
-// Inicializar aplicação quando o DOM estiver carregado
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new PostureStreamingApp();
-});
-
-// Manipular mudanças de fullscreen
-document.addEventListener('fullscreenchange', () => {
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    const icon = fullscreenBtn.querySelector('i');
-
-    if (document.fullscreenElement) {
-        icon.className = 'fas fa-compress';
-        fullscreenBtn.title = 'Sair da tela cheia';
-    } else {
-        icon.className = 'fas fa-expand';
-        fullscreenBtn.title = 'Tela cheia';
-    }
-});

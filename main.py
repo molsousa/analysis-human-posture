@@ -23,6 +23,9 @@ analysis_data = {
     "counter": 0,
     "posture_feedback": "Aguardando...",
     "posture_feedback_type": "INFO",
+    "posture_score": 100,
+    "rep_feedback": "",
+    "rep_feedback_type": "INFO",
     "movement_phase": "INICIANDO",
     "exercise_name": "Nenhum",
 }
@@ -184,8 +187,12 @@ def main(exercise_config, video_path=0):
                         cv2.LINE_AA,
                     )
 
-        feedback_color = COLOR_CONFIG["feedback_color"].get(
-            analyzer.feedback_type, (255, 255, 255)
+        # Cores para feedback
+        posture_color = COLOR_CONFIG["feedback_color"].get(
+            analyzer.posture_feedback_type, (255, 255, 255)
+        )
+        rep_color = COLOR_CONFIG["feedback_color"].get(
+            analyzer.rep_feedback_type, (255, 255, 255)
         )
 
         # Informações na tela (separadas)
@@ -220,10 +227,7 @@ def main(exercise_config, video_path=0):
             cv2.LINE_AA,
         )
 
-        # Feedback de POSTURA
-        posture_color = COLOR_CONFIG["feedback_color"].get(
-            analyzer.feedback_type, (255, 255, 255)
-        )
+        # Feedback de POSTURA (sempre visível)
         cv2.putText(
             display_frame,
             "Postura:",
@@ -234,10 +238,20 @@ def main(exercise_config, video_path=0):
             2,
             cv2.LINE_AA,
         )
+        cv2.putText(
+            display_frame,
+            f"Score: {analyzer.posture_score}/100",
+            (10, 190),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            posture_color,
+            1,
+            cv2.LINE_AA,
+        )
 
-        y0 = 190
+        y0 = 220
         dy = 25
-        for i, line in enumerate(analyzer.feedback.split("\n")):
+        for i, line in enumerate(analyzer.posture_feedback.split("\n")):
             y = y0 + i * dy
             cv2.putText(
                 display_frame,
@@ -250,6 +264,34 @@ def main(exercise_config, video_path=0):
                 cv2.LINE_AA,
             )
 
+        # Feedback de REPETIÇÃO (apenas quando houver)
+        if analyzer.rep_feedback:
+            y_start = y0 + (len(analyzer.posture_feedback.split("\n")) * dy) + 20
+            cv2.putText(
+                display_frame,
+                "Repeticao:",
+                (10, y_start),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.9,
+                rep_color,
+                2,
+                cv2.LINE_AA,
+            )
+
+            y_start += 30
+            for i, line in enumerate(analyzer.rep_feedback.split("\n")):
+                y = y_start + i * dy
+                cv2.putText(
+                    display_frame,
+                    line,
+                    (10, y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    rep_color,
+                    1,
+                    cv2.LINE_AA,
+                )
+
         # Atualizar frame global para streaming
         with frame_lock:
             current_frame = display_frame
@@ -257,8 +299,11 @@ def main(exercise_config, video_path=0):
         # Atualizar dados de análise para API
         analysis_data = {
             "counter": analyzer.counter,
-            "posture_feedback": analyzer.feedback,
-            "posture_feedback_type": analyzer.feedback_type,
+            "posture_feedback": analyzer.posture_feedback,
+            "posture_feedback_type": analyzer.posture_feedback_type,
+            "posture_score": analyzer.posture_score,
+            "rep_feedback": analyzer.rep_feedback,
+            "rep_feedback_type": analyzer.rep_feedback_type,
             "movement_phase": analyzer.movement_phase,
             "exercise_name": analyzer.exercise_name,
         }

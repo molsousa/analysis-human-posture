@@ -33,12 +33,17 @@ class PostureAnalyzer:
         # --- LÓGICA DE CONTAGEM DE REPETIÇÕES ---
         self.rep_state = "up"
         self.counter = 0
-        self.rep_quality = True
+        self.rep_quality = True  # True = boa qualidade, False = com erros
         self.actual_rep_errors = set()
 
         # --- LÓGICA DE FEEDBACK E ESTADO ---
-        self.feedback = "Inicie o exercicio."
-        self.feedback_type = "INFO"
+        self.posture_feedback = "Inicie o exercício."
+        self.posture_feedback_type = "INFO"
+        self.posture_score = 100  # Score de 0-100
+
+        self.rep_feedback = ""  # Feedback específico da repetição
+        self.rep_feedback_type = "INFO"
+
         self.rep_complete_feedback_end_time = 0
         self.movement_phase = "INICIANDO"
 
@@ -84,9 +89,10 @@ class PostureAnalyzer:
 
     def analyze(self, keypoints, image_shape, reporter):
         if not keypoints:
-            self.feedback = "Nenhuma pessoa detectada."
-            self.feedback_type = "ERRO_CRITICO"
+            self.posture_feedback = "Nenhuma pessoa detectada."
+            self.posture_feedback_type = "ERRO_CRITICO"
             self.movement_phase = "INDETERMINADO"
+            self.posture_score = 0
             return {}
 
         angles = {}
@@ -101,37 +107,39 @@ class PostureAnalyzer:
 
         if self.exercise_name == "Agachamento":
             self.movement_phase = self._analyze_squat_phase(angles, visibilities)
-
         else:
             self.movement_phase = self.detect_body_orientation(keypoints, image_shape)
 
         main_angle_value, active_angle_name = self._get_active_main_angle(
             angles, visibilities
         )
-        posture_feedback, posture_type = self._get_posture_feedback(
-            keypoints, angles, visibilities, active_angle_name
+
+        # --- ATUALIZAÇÃO SEPARADA: Feedback de postura (não interfere na contagem) ---
+        posture_feedback, posture_type, posture_score = (
+            self._get_posture_feedback_with_score(
+                keypoints, angles, visibilities, active_angle_name
+            )
         )
+        self.posture_feedback = posture_feedback
+        self.posture_feedback_type = posture_type
+        self.posture_score = posture_score
 
-        # **MODIFICAÇÃO CRÍTICA**: Verificação de erro durante TODA a repetição
-        # Se houver erro crítico durante qualquer fase da repetição, marca como inválida
-        if posture_type in ["ATENCAO", "ERRO_CRITICO"]:
-            self.rep_quality = False
-            self.actual_rep_errors.add(posture_feedback)
+        # --- ATUALIZAÇÃO SEPARADA: Contagem de repetições (sempre conta) ---
+        self._update_rep_counter(main_angle_value, reporter, posture_type)
 
-        # **MODIFICAÇÃO**: Só conta a repetição se a qualidade for boa
-        self._update_rep_counter(main_angle_value, reporter)
-
+        # Feedback de repetição completa (temporário)
         if time.time() < self.rep_complete_feedback_end_time:
             if self.rep_quality:
-                self.feedback = f"Repeticao {self.counter} concluída com sucesso!"
-                self.feedback_type = "CORRETO"
+                self.rep_feedback = f"Repetição {self.counter} concluída! (Boa postura)"
+                self.rep_feedback_type = "CORRETO"
             else:
-                self.feedback = f"Repetição {self.counter} com erros de postura."
-                self.feedback_type = "ATENCAO"
-
+                self.rep_feedback = (
+                    f"Repetição {self.counter} concluída! (Postura com erros)"
+                )
+                self.rep_feedback_type = "ATENCAO"
         else:
-            self.feedback = posture_feedback
-            self.feedback_type = posture_type
+            self.rep_feedback = ""
+            self.rep_feedback_type = "INFO"
 
         return angles
 
@@ -179,13 +187,10 @@ class PostureAnalyzer:
                 np.array(joint_points["left_shoulder"][:2])
                 + np.array(joint_points["right_shoulder"][:2])
             ) / 2
-
         elif joint_points["left_shoulder"]:
             superior_point = np.array(joint_points["left_shoulder"][:2])
-
         elif joint_points["right_shoulder"]:
             superior_point = np.array(joint_points["right_shoulder"][:2])
-
         else:
             return "INDETERMINADO"
 
@@ -194,13 +199,10 @@ class PostureAnalyzer:
                 np.array(joint_points["left_hip"][:2])
                 + np.array(joint_points["right_hip"][:2])
             ) / 2
-
         elif joint_points["left_hip"]:
             inferior_point = np.array(joint_points["left_hip"][:2])
-
         elif joint_points["right_hip"]:
             inferior_point = np.array(joint_points["right_hip"][:2])
-
         else:
             return "INDETERMINADO"
 
@@ -218,7 +220,6 @@ class PostureAnalyzer:
             return "HORIZONTAL (FLEXAO)"
 
     def _get_active_main_angle(self, angles, visibilities):
-
         main_angle_base_name = self.config["main_angle"]
         active_angle_name = main_angle_base_name
         opposite_angle_name = None
@@ -235,7 +236,7 @@ class PostureAnalyzer:
                 active_angle_name = opposite_angle_name
         return angles.get(active_angle_name), active_angle_name
 
-    def _update_rep_counter(self, main_angle_value, reporter):
+    def _update_rep_counter(self, main_angle_value, reporter, posture_type):
         if main_angle_value is None:
             return
 
@@ -248,27 +249,36 @@ class PostureAnalyzer:
             self.actual_rep_errors.clear()
 
         elif self.rep_state == "down" and main_angle_value > up_threshold:
-            # **MODIFICAÇÃO**: Só conta se a qualidade for boa
-            if self.rep_quality:
-                self.counter += 1
-                reporter.save_rep(
-                    self.counter, self.rep_quality, self.actual_rep_errors
-                )
-                self.rep_complete_feedback_end_time = time.time() + 2
-            else:
-                # Se a repetição foi ruim, ainda salva no relatório
-                reporter.save_rep(0, self.rep_quality, self.actual_rep_errors)
+            # **CRÍTICO: SEMPRE CONTA A REPETIÇÃO**
+            self.counter += 1
+
+            # Verifica se houve erros durante a repetição
+            if posture_type in ["ATENCAO", "ERRO_CRITICO"]:
+                self.rep_quality = False
+                self.actual_rep_errors.add(self.posture_feedback)
+
+            # Salva no relatório (passa qualidade e erros)
+            reporter.save_rep(self.counter, self.rep_quality, self.actual_rep_errors)
+            self.rep_complete_feedback_end_time = (
+                time.time() + 2
+            )  # Mostrar por 2 segundos
 
             self.rep_state = "up"
 
-    def _get_posture_feedback(self, keypoints, angles, visibilities, active_angle_name):
+    def _get_posture_feedback_with_score(
+        self, keypoints, angles, visibilities, active_angle_name
+    ):
+        """
+        Retorna feedback de postura com score (0-100)
+        """
         active_side_prefix = (
             "right_"
             if "right_" in active_angle_name
             else "left_" if "left_" in active_angle_name else ""
         )
-
         current_phase = self.movement_phase
+        errors = []
+        score = 100  # Começa com 100, perde pontos por erros
 
         for rule in self.rules["feedback"]:
             rule_type = rule.get("type", "zone")
@@ -288,6 +298,7 @@ class PostureAnalyzer:
                     angle_to_check_name = rule["angle"].replace(
                         inactive_prefix, active_side_prefix
                     )
+
                 angle_value = angles.get(angle_to_check_name)
                 angle_vis = visibilities.get(angle_to_check_name, 0)
 
@@ -297,8 +308,11 @@ class PostureAnalyzer:
                         if "yellow" in rule["zones"]:
                             yellow = rule["zones"]["yellow"]
                             if yellow["min"] <= angle_value <= yellow["max"]:
-                                return rule["message"], "ATENCAO"
-                        return rule["message"], "ERRO_CRITICO"
+                                errors.append((rule["message"], "ATENCAO"))
+                                score -= 15  # Perde 15 pontos por erro amarelo
+                        else:
+                            errors.append((rule["message"], "ERRO_CRITICO"))
+                            score -= 30  # Perde 30 pontos por erro crítico
 
             elif rule_type == "segment_parallelism":
                 s1_p1_idx = self.detector.get_landmark_index(rule["segment1"][0])
@@ -315,13 +329,14 @@ class PostureAnalyzer:
 
                 if angle1 is not None and angle2 is not None:
                     difference = abs(angle1 - angle2)
-
                     if difference > 180:
                         difference = 360 - difference
                     if abs(difference - 180) < difference:
                         difference = abs(difference - 180)
+
                     if difference > rule["max_difference"]:
-                        return rule["message"], "ATENCAO"
+                        errors.append((rule["message"], "ATENCAO"))
+                        score -= 20
 
             elif rule_type == "vertical_comparison":
                 lm1_name, lm2_name = rule["landmark1"], rule["landmark2"]
@@ -329,6 +344,7 @@ class PostureAnalyzer:
                 if active_side_prefix:
                     lm1_name = lm1_name.replace("right_", active_side_prefix)
                     lm2_name = lm2_name.replace("right_", active_side_prefix)
+
                 lm1_idx = self.detector.get_landmark_index(lm1_name)
                 lm2_idx = self.detector.get_landmark_index(lm2_name)
                 vis1 = keypoints[lm1_idx][3]
@@ -339,7 +355,9 @@ class PostureAnalyzer:
                     y2 = keypoints[lm2_idx][1]
                     if rule["condition"] == "is_below_or_level":
                         if y1 < y2:
-                            return rule["message"], "ATENCAO"
+                            errors.append((rule["message"], "ATENCAO"))
+                            score -= 10
+
             elif rule_type == "angle_offset":
                 base_angle_name = rule["base_angle"]
                 offset_angle_name = rule["offset_angle"]
@@ -367,6 +385,14 @@ class PostureAnalyzer:
                     expected = rule["expected_offset_range"]
 
                     if not (expected["min"] <= offset <= expected["max"]):
-                        return rule["message"], "ATENCAO"
+                        errors.append((rule["message"], "ATENCAO"))
+                        score -= 15
 
-        return "Postura Correta!", "CORRETO"
+        # Limitar score entre 0 e 100
+        score = max(0, min(100, score))
+
+        if errors:
+            # Retorna o primeiro erro encontrado
+            return errors[0][0], errors[0][1], score
+        else:
+            return "Postura Correta!", "CORRETO", score
