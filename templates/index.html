@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Análise de Postura</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Cabeçalho -->
+      <header class="header">
+        <h1>📊 Análise de Postura</h1>
+        <p class="subtitle">Sistema de análise de exercícios de calistenia</p>
+      </header>
+
+      <!-- Status -->
+      <div class="status-card">
+        <div class="status-header">
+          <h2>Status do Sistema</h2>
+          <div class="status-indicator">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Desconectado</span>
+          </div>
+        </div>
+        <div class="status-info">
+          <div class="info-item">
+            <span class="info-label">Exercício:</span>
+            <span id="currentExercise">Nenhum</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Repetições:</span>
+            <span id="currentReps">0</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Status:</span>
+            <span id="analysisStatus">Parado</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles -->
+      <div class="control-card">
+        <h2>Controles</h2>
+
+        <div class="form-group">
+          <label for="exerciseSelect">Exercício:</label>
+          <select id="exerciseSelect" class="form-select">
+            <option value="">Carregando exercícios...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Fonte de Vídeo:</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="videoSource" value="webcam" checked />
+              <span class="radio-custom"></span>
+              Webcam
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="videoSource" value="video" />
+              <span class="radio-custom"></span>
+              Arquivo de Vídeo
+            </label>
+          </div>
+          <div id="videoFileGroup" class="hidden">
+            <select id="videoSelect" class="form-select">
+              <option value="">Carregando vídeos...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button id="startBtn" class="btn btn-primary">▶ Iniciar Análise</button>
+          <button id="stopBtn" class="btn btn-danger" disabled>⏹ Parar</button>
+          <button id="refreshBtn" class="btn btn-secondary">🔄 Atualizar</button>
+        </div>
+      </div>
+
+      <!-- Informações -->
+      <div class="info-grid">
+        <!-- Instruções -->
+        <div class="info-card">
+          <h2>📋 Instruções</h2>
+          <ol class="instructions">
+            <li>Selecione um exercício na lista</li>
+            <li>Escolha usar a webcam ou um arquivo de vídeo</li>
+            <li>Clique em "Iniciar Análise"</li>
+            <li>A janela do OpenCV será aberta no computador</li>
+            <li>Execute o exercício na frente da câmera</li>
+            <li>O sistema fornecerá feedback em tempo real</li>
+            <li>Use o celular para visualizar esta interface</li>
+          </ol>
+
+          <div class="connection-info">
+            <h3>🌐 Conexão</h3>
+            <p>Para acessar pelo celular:</p>
+            <p class="ip-address">
+              URL: <code id="serverUrl">http://localhost:5000</code>
+            </p>
+            <p class="note">Use o mesmo IP do computador na rede Wi-Fi</p>
+          </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="info-card">
+          <h2>📝 Logs da Sessão</h2>
+          <div class="logs-container">
+            <div class="logs-header">
+              <h3>Relatórios Disponíveis</h3>
+              <button id="refreshLogsBtn" class="btn btn-sm">↻</button>
+            </div>
+            <div class="logs-list" id="logsList">
+              <div class="log-placeholder">Carregando logs...</div>
+            </div>
+          </div>
+
+          <div class="feedback-info">
+            <h3>💡 Informações</h3>
+            <p>
+              Os logs são salvos automaticamente na pasta <code>logs/</code>
+            </p>
+            <p>Cada sessão gera um arquivo com data e hora</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rodapé -->
+      <footer class="footer">
+        <p>Sistema de Análise de Postura - Desenvolvido para calistenia</p>
+        <p class="footer-note">
+          <small>Executando em: <span id="serverTime">--:--:--</span></small>
+        </p>
+      </footer>
+    </div>
+
+    <!-- Modal de Erro -->
+    <div id="errorModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>⚠️ Erro</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p id="errorMessage">Ocorreu um erro.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary modal-close-btn">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+  </body>
+</html>
