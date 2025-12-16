@@ -7,7 +7,7 @@ from src.angle_utils import calculate_angle_3d, calculate_segment_angle_horizont
 class PostureAnalyzer:
     """
     Analisa a postura com base em keypoints 3D e um arquivo de configuração de exercício.
-    Implementa lógicas separadas e robustas para contagem de repetições e feedback de postura.
+    Implementa margem de erro (tolerância) para evitar feedbacks excessivos.
     """
 
     def __init__(self, exercise_config_path, pose_detector):
@@ -19,6 +19,11 @@ class PostureAnalyzer:
         self.exercise_name = self.config["name"]
         self.rules = self.config["rules"]
         self.angle_definitions = []
+
+        # --- CONFIGURAÇÃO DE TOLERÂNCIA ---
+        # Margem de erro em graus. O usuário pode errar por X graus
+        # e o sistema ainda aceitará, evitando alertas constantes.
+        self.tolerance_degrees = 3.0
 
         for angle_name, joints in self.config["angle_definitions"].items():
             index = [self.detector.get_landmark_index(j) for j in joints]
@@ -33,15 +38,15 @@ class PostureAnalyzer:
         # --- LÓGICA DE CONTAGEM DE REPETIÇÕES ---
         self.rep_state = "up"
         self.counter = 0
-        self.rep_quality = True  # True = boa qualidade, False = com erros
+        self.rep_quality = True
         self.actual_rep_errors = set()
 
         # --- LÓGICA DE FEEDBACK E ESTADO ---
         self.posture_feedback = "Inicie o exercício."
         self.posture_feedback_type = "INFO"
-        self.posture_score = 100  # Score de 0-100
+        self.posture_score = 100
 
-        self.rep_feedback = ""  # Feedback específico da repetição
+        self.rep_feedback = ""
         self.rep_feedback_type = "INFO"
 
         self.rep_complete_feedback_end_time = 0
@@ -55,7 +60,7 @@ class PostureAnalyzer:
 
     def _analyze_squat_phase(self, angles, visibilities):
         """
-        Analisa e retorna a fase atual do movimento de agachamento com regras refinadas.
+        Analisa e retorna a fase atual do movimento de agachamento.
         """
         STAND_THRESHOLD = 160
         SQUATTED_KNEE_MIN, SQUATTED_KNEE_MAX = 40, 90
@@ -67,7 +72,6 @@ class PostureAnalyzer:
         if right_knee_vis > left_knee_vis:
             knee_angle = angles.get("right_knee_flexion")
             hip_angle = angles.get("right_hip_flexion")
-
         else:
             knee_angle = angles.get("left_knee_flexion")
             hip_angle = angles.get("left_hip_flexion")
@@ -114,7 +118,7 @@ class PostureAnalyzer:
             angles, visibilities
         )
 
-        # --- ATUALIZAÇÃO SEPARADA: Feedback de postura (não interfere na contagem) ---
+        # Atualiza Feedback de Postura com Lógica de Tolerância
         posture_feedback, posture_type, posture_score = (
             self._get_posture_feedback_with_score(
                 keypoints, angles, visibilities, active_angle_name
@@ -124,10 +128,10 @@ class PostureAnalyzer:
         self.posture_feedback_type = posture_type
         self.posture_score = posture_score
 
-        # --- ATUALIZAÇÃO SEPARADA: Contagem de repetições (sempre conta) ---
+        # Atualiza Contagem
         self._update_rep_counter(main_angle_value, reporter, posture_type)
 
-        # Feedback de repetição completa (temporário)
+        # Feedback de repetição completa
         if time.time() < self.rep_complete_feedback_end_time:
             if self.rep_quality:
                 self.rep_feedback = f"Repetição {self.counter} concluída! (Boa postura)"
@@ -144,10 +148,6 @@ class PostureAnalyzer:
         return angles
 
     def detect_body_orientation(self, keypoints, image_shape, vert_threshold=0.6):
-        """
-        Determina se o corpo está em uma posição vertical (em pé) ou horizontal (flexão).
-        Retorna "EM_PE", "HORIZONTAL (FLEXAO)" ou "INDETERMINADO".
-        """
         if not keypoints or image_shape is None:
             return "INDETERMINADO"
 
@@ -163,6 +163,11 @@ class PostureAnalyzer:
         if max_idx >= len(keypoints):
             return "INDETERMINADO"
 
+        # (Para brevidade, assumimos que a lógica interna do detect_body_orientation
+        # permanece a mesma das versões anteriores enviadas)
+        # Use o código original para o corpo deste método
+
+        # Recriando a lógica básica para garantir funcionamento neste snippet:
         joint_points = {
             "left_shoulder": (
                 keypoints[left_shoulder_idx]
@@ -208,16 +213,15 @@ class PostureAnalyzer:
 
         delta_x = abs(superior_point[0] - inferior_point[0]) * w
         delta_y = abs(superior_point[1] - inferior_point[1]) * h
-
         if delta_x + delta_y == 0:
             return "INDETERMINADO"
 
         verticality_ratio = delta_y / (delta_x + delta_y)
-
-        if verticality_ratio > vert_threshold:
-            return "EM PE (Orientacao)"
-        else:
-            return "HORIZONTAL (FLEXAO)"
+        return (
+            "EM PE (Orientacao)"
+            if verticality_ratio > vert_threshold
+            else "HORIZONTAL (FLEXAO)"
+        )
 
     def _get_active_main_angle(self, angles, visibilities):
         main_angle_base_name = self.config["main_angle"]
@@ -245,31 +249,24 @@ class PostureAnalyzer:
 
         if self.rep_state == "up" and main_angle_value < down_threshold:
             self.rep_state = "down"
-            self.rep_quality = True  # Reset para nova repetição
+            self.rep_quality = True
             self.actual_rep_errors.clear()
 
         elif self.rep_state == "down" and main_angle_value > up_threshold:
-            # **CRÍTICO: SEMPRE CONTA A REPETIÇÃO**
             self.counter += 1
-
-            # Verifica se houve erros durante a repetição
             if posture_type in ["ATENCAO", "ERRO_CRITICO"]:
                 self.rep_quality = False
                 self.actual_rep_errors.add(self.posture_feedback)
 
-            # Salva no relatório (passa qualidade e erros)
             reporter.save_rep(self.counter, self.rep_quality, self.actual_rep_errors)
-            self.rep_complete_feedback_end_time = (
-                time.time() + 2
-            )  # Mostrar por 2 segundos
-
+            self.rep_complete_feedback_end_time = time.time() + 2
             self.rep_state = "up"
 
     def _get_posture_feedback_with_score(
         self, keypoints, angles, visibilities, active_angle_name
     ):
         """
-        Retorna feedback de postura com score (0-100)
+        Retorna feedback aplicando MARGEM DE ERRO.
         """
         active_side_prefix = (
             "right_"
@@ -278,15 +275,19 @@ class PostureAnalyzer:
         )
         current_phase = self.movement_phase
         errors = []
-        score = 100  # Começa com 100, perde pontos por erros
+        score = 100
+
+        # Tolerância local para uso nas comparações
+        margin = self.tolerance_degrees
 
         for rule in self.rules["feedback"]:
             rule_type = rule.get("type", "zone")
-
             apply_when = rule.get("apply_when")
+
             if apply_when and current_phase != apply_when and apply_when != "both":
                 continue
 
+            # --- Lógica ZONE com Tolerância ---
             if rule_type == "zone":
                 angle_to_check_name = rule["angle"]
                 if active_side_prefix and (
@@ -304,22 +305,47 @@ class PostureAnalyzer:
 
                 if angle_value is not None and angle_vis > 0.65:
                     green = rule["zones"]["green"]
-                    if not (green["min"] <= angle_value <= green["max"]):
+
+                    # 1. Verifica Zona Verde (Perfeita)
+                    is_perfect = green["min"] <= angle_value <= green["max"]
+
+                    # 2. Verifica Zona Aceitável (Verde + Margem de Erro)
+                    # Ex: Se min é 160 e margin é 6, aceitamos até 154.
+                    is_acceptable = (
+                        (green["min"] - margin)
+                        <= angle_value
+                        <= (green["max"] + margin)
+                    )
+
+                    if not is_perfect and not is_acceptable:
+                        # Se saiu da margem de erro, aí sim analisamos erro
                         if "yellow" in rule["zones"]:
                             yellow = rule["zones"]["yellow"]
+                            # A margem de erro também "empurra" o início do erro
+                            # Se estiver na zona amarela fora da margem aceitável
                             if yellow["min"] <= angle_value <= yellow["max"]:
                                 errors.append((rule["message"], "ATENCAO"))
-                                score -= 15  # Perde 15 pontos por erro amarelo
+                                score -= 15
+                            else:
+                                # Fora da amarela também
+                                errors.append((rule["message"], "ERRO_CRITICO"))
+                                score -= 30
                         else:
+                            # Sem zona amarela definida, vai direto para erro crítico
                             errors.append((rule["message"], "ERRO_CRITICO"))
-                            score -= 30  # Perde 30 pontos por erro crítico
+                            score -= 30
+                    elif is_acceptable and not is_perfect:
+                        # Está na margem de erro.
+                        # Não gera erro de texto, mas desconta levemente o score para indicar imperfeição
+                        score -= 5
 
+            # --- Lógica SEGMENT PARALLELISM com Tolerância ---
             elif rule_type == "segment_parallelism":
+                # ... (cálculo dos pontos igual ao anterior) ...
                 s1_p1_idx = self.detector.get_landmark_index(rule["segment1"][0])
                 s1_p2_idx = self.detector.get_landmark_index(rule["segment1"][1])
                 s2_p1_idx = self.detector.get_landmark_index(rule["segment2"][0])
                 s2_p2_idx = self.detector.get_landmark_index(rule["segment2"][1])
-
                 angle1 = calculate_segment_angle_horizontal(
                     keypoints, s1_p1_idx, s1_p2_idx
                 )
@@ -328,71 +354,80 @@ class PostureAnalyzer:
                 )
 
                 if angle1 is not None and angle2 is not None:
-                    difference = abs(angle1 - angle2)
-                    if difference > 180:
-                        difference = 360 - difference
-                    if abs(difference - 180) < difference:
-                        difference = abs(difference - 180)
+                    diff = abs(angle1 - angle2)
+                    if diff > 180:
+                        diff = 360 - diff
+                    if abs(diff - 180) < diff:
+                        diff = abs(diff - 180)
 
-                    if difference > rule["max_difference"]:
+                    # Adiciona a margem de erro na regra de diferença máxima
+                    if diff > (rule["max_difference"] + margin):
                         errors.append((rule["message"], "ATENCAO"))
                         score -= 20
+                    elif diff > rule["max_difference"]:
+                        # Dentro da margem, desconta pouco
+                        score -= 5
 
+            # --- Lógica VERTICAL COMPARISON ---
             elif rule_type == "vertical_comparison":
+                # ... (cálculo igual) ...
                 lm1_name, lm2_name = rule["landmark1"], rule["landmark2"]
-
                 if active_side_prefix:
                     lm1_name = lm1_name.replace("right_", active_side_prefix)
                     lm2_name = lm2_name.replace("right_", active_side_prefix)
-
                 lm1_idx = self.detector.get_landmark_index(lm1_name)
                 lm2_idx = self.detector.get_landmark_index(lm2_name)
-                vis1 = keypoints[lm1_idx][3]
-                vis2 = keypoints[lm2_idx][3]
+                vis1, vis2 = keypoints[lm1_idx][3], keypoints[lm2_idx][3]
 
                 if vis1 > 0.65 and vis2 > 0.65:
-                    y1 = keypoints[lm1_idx][1]
-                    y2 = keypoints[lm2_idx][1]
+                    y1, y2 = keypoints[lm1_idx][1], keypoints[lm2_idx][1]
+                    # Adicionamos uma tolerância de pixels normalizados (ex: 0.05)
+                    # pois Y é coordenada, não ângulo.
+                    y_margin = 0.03
+
                     if rule["condition"] == "is_below_or_level":
-                        if y1 < y2:
+                        # Se deveria estar abaixo ou nível, mas está acima por mais que a margem
+                        if y1 < (y2 - y_margin):
                             errors.append((rule["message"], "ATENCAO"))
                             score -= 10
 
+            # --- Lógica ANGLE OFFSET com Tolerância ---
             elif rule_type == "angle_offset":
-                base_angle_name = rule["base_angle"]
-                offset_angle_name = rule["offset_angle"]
-
+                # ... (cálculo igual) ...
+                base_name = rule["base_angle"]
+                offset_name = rule["offset_angle"]
                 if active_side_prefix:
-                    base_angle_name = base_angle_name.replace(
-                        "right_", active_side_prefix
-                    )
-                    offset_angle_name = offset_angle_name.replace(
-                        "right_", active_side_prefix
-                    )
-
-                base_angle_val = angles.get(base_angle_name)
-                offset_angle_val = angles.get(offset_angle_name)
-                vis1 = visibilities.get(base_angle_name, 0)
-                vis2 = visibilities.get(offset_angle_name, 0)
+                    base_name = base_name.replace("right_", active_side_prefix)
+                    offset_name = offset_name.replace("right_", active_side_prefix)
+                base_val = angles.get(base_name)
+                offset_val = angles.get(offset_name)
+                vis1 = visibilities.get(base_name, 0)
+                vis2 = visibilities.get(offset_name, 0)
 
                 if (
-                    base_angle_val is not None
-                    and offset_angle_val is not None
+                    base_val is not None
+                    and offset_val is not None
                     and vis1 > 0.65
                     and vis2 > 0.65
                 ):
-                    offset = base_angle_val - offset_angle_val
+                    offset = base_val - offset_val
                     expected = rule["expected_offset_range"]
 
-                    if not (expected["min"] <= offset <= expected["max"]):
+                    # Aplica tolerância nas bordas min e max
+                    if not (
+                        (expected["min"] - margin)
+                        <= offset
+                        <= (expected["max"] + margin)
+                    ):
                         errors.append((rule["message"], "ATENCAO"))
                         score -= 15
+                    elif not (expected["min"] <= offset <= expected["max"]):
+                        # Na margem
+                        score -= 5
 
-        # Limitar score entre 0 e 100
         score = max(0, min(100, score))
 
         if errors:
-            # Retorna o primeiro erro encontrado
             return errors[0][0], errors[0][1], score
         else:
             return "Postura Correta!", "CORRETO", score
