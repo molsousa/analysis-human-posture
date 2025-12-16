@@ -238,6 +238,7 @@ def main(exercise_config, video_path=0):
             2,
             cv2.LINE_AA,
         )
+        '''
         cv2.putText(
             display_frame,
             f"Score: {analyzer.posture_score}/100",
@@ -248,6 +249,7 @@ def main(exercise_config, video_path=0):
             1,
             cv2.LINE_AA,
         )
+        '''
 
         y0 = 220
         dy = 25

@@ -30,7 +30,7 @@ class PostureAnalyzer:
 
             if None in index:
                 raise ValueError(
-                    f"Nome de articulação inválido para o ângulo '{angle_name}'"
+                    f"Nome de articulacao invalido para o angulo '{angle_name}'"
                 )
 
             self.angle_definitions.append({"name": angle_name, "index": index})
@@ -134,11 +134,11 @@ class PostureAnalyzer:
         # Feedback de repetição completa
         if time.time() < self.rep_complete_feedback_end_time:
             if self.rep_quality:
-                self.rep_feedback = f"Repetição {self.counter} concluída! (Boa postura)"
+                self.rep_feedback = f"Repeticao {self.counter} concluida (sem erros)"
                 self.rep_feedback_type = "CORRETO"
             else:
                 self.rep_feedback = (
-                    f"Repetição {self.counter} concluída! (Postura com erros)"
+                    f"Repeticao {self.counter} concluida (com erros)"
                 )
                 self.rep_feedback_type = "ATENCAO"
         else:
