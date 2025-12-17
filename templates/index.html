@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Análise de Postura - Streaming</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1><i class="fas fa-running"></i> Análise de Postura em Tempo Real</h1>
+        <p class="subtitle">Streaming da análise executada no notebook</p>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-item">
+          <div class="status-label">Exercício</div>
+          <div class="status-value" id="exerciseName">Aguardando...</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Repetições Totais</div>
+          <div class="status-value" id="totalReps">0</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Status</div>
+          <div class="status-value" id="analysisStatus">Conectando...</div>
+        </div>
+      </div>
+
+      <div class="video-container">
+        <img id="videoStream" src="" alt="Streaming de análise" class="video-frame" />
+      </div>
+
+      <div class="info-panels">
+        <!-- Painel de Feedback de Postura -->
+        <div class="panel">
+          <h2 class="panel-title"><i class="fas fa-chart-line"></i> Feedback de Postura</h2>
+          <div class="feedback-box feedback-posture" id="postureFeedback">
+            <div class="feedback-icon">
+              <i class="fas fa-chart-bar" id="postureIcon"></i>
+            </div>
+            <div class="feedback-content">
+              <div id="postureText">Aguardando análise de postura...</div>
+              <div class="score-container">
+                <div class="score-value" id="postureScore">100</div>
+                <div class="score-max">/100</div>
+                <div class="score-bar">
+                  <div class="score-fill" id="scoreFill" style="width: 100%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value" id="goodReps">0</div>
+              <div class="stat-label">
+                <i class="fas fa-check-circle"></i> Boa Postura
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="badReps">0</div>
+              <div class="stat-label">
+                <i class="fas fa-exclamation-triangle"></i> Postura Ruim
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="accuracy">0%</div>
+              <div class="stat-label">
+                <i class="fas fa-bullseye"></i> Precisão
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Painel de Feedback de Repetição -->
+        <div class="panel">
+          <h2 class="panel-title"><i class="fas fa-sync-alt"></i> Feedback de Repetição</h2>
+          <div class="feedback-box" id="repFeedback">
+            <div class="feedback-icon">
+              <i class="fas fa-sync" id="repIcon"></i>
+            </div>
+            <div class="feedback-content" id="repText">Aguardando conclusão de repetição...</div>
+          </div>
+
+          <h2 class="panel-title"><i class="fas fa-info-circle"></i> Informações do Sistema</h2>
+          <div class="connection-status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="connectionText">Conectando ao servidor de análise...</span>
+          </div>
+
+          <div class="system-info">
+            <p>
+              <i class="fas fa-mobile-alt"></i> Acessível em qualquer dispositivo na rede
+            </p>
+            <p>
+              <i class="fas fa-laptop"></i> Execute no notebook:
+            </p>
+            <code>python main.py --exercise exercise_templates/pushup.json --video 0</code>
+            <p>
+              <i class="fas fa-globe"></i> Acesse pelo celular:
+            </p>
+            <div class="server-url" id="serverAddress">http://localhost:5000</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>Sistema de Análise de Postura - Separação de feedback e contagem</p>
+        <p>Conta TODAS as repetições, mas fornece feedback separado sobre a qualidade da postura</p>
+      </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+  </body>
+</html>
