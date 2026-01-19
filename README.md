@@ -174,11 +174,9 @@ Inicie o `PostureAnalyzer` com o caminho do novo template para que ele use as re
 
         python --version
 
-* É necessário instalar as bibliotecas opencv, mediapipe e filterpy executando as linhas de código:
+* É necessário instalar as bibliotecas contidas em `requeriments.txt`
 
-        pip install opencv-python
-        pip install mediapipe
-        pip install filterpy
+        pip install -r requeriments.txt
 
 * É recomendável guardar os vídeos na pasta "[**videos/**](https://github.com/molsousa/analise-postura-humana/tree/main/videos)" a fim de evitar colocar um caminho mais extenso na execução.
 
