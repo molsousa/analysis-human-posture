@@ -23,7 +23,7 @@ class PostureAnalyzer:
         # --- CONFIGURAÇÃO DE TOLERÂNCIA ---
         # Margem de erro em graus. O usuário pode errar por X graus
         # e o sistema ainda aceitará, evitando alertas constantes.
-        self.tolerance_degrees = 3.0
+        self.tolerance_degrees = 1.5
 
         for angle_name, joints in self.config["angle_definitions"].items():
             index = [self.detector.get_landmark_index(j) for j in joints]
