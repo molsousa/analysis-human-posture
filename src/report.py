@@ -1,8 +1,6 @@
 import os
 from datetime import datetime
 from config import LOG_CONFIG
-from collections import Counter
-
 
 class Log:
     """
