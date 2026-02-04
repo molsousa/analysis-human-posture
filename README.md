@@ -41,6 +41,8 @@ A implementação do projeto faz parte de uma pesquisa científica desenvolvida 
     - O nome do diretório onde os relatórios de sessão são salvos (ex: logs).
 
     - Isso permite alterar a aparência e o comportamento da aplicação facilmente, sem precisar modificar o código principal.
+
+- [***server.py***](https://github.com/molsousa/analise-postura-humana/blob/main/server.py)
  
 ## Exemplos de Uso dos Principais Módulos
 
