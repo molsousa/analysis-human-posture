@@ -159,7 +159,7 @@ def main(exercise_config, video_path=0):
                 display_frame, smoothed_keypoints, detector, landmarks_to_hide
             )
 
-        # --- LÓGICA DO MODO DE DEPURACAO ---
+        # --- MODO DE DEPURACAO ---
         if calculated_angles and smoothed_keypoints:
             h, w, _ = display_frame.shape
             for angle_def in analyzer.angle_definitions:

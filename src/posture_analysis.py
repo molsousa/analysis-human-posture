@@ -20,9 +20,7 @@ class PostureAnalyzer:
         self.rules = self.config["rules"]
         self.angle_definitions = []
 
-        # --- CONFIGURAÇÃO DE TOLERÂNCIA ---
-        # Margem de erro em graus. O usuário pode errar por X graus
-        # e o sistema ainda aceitará, evitando alertas constantes.
+        # --- TOLERÂNCIA ---
         self.tolerance_degrees = 1.5
 
         for angle_name, joints in self.config["angle_definitions"].items():
@@ -35,13 +33,13 @@ class PostureAnalyzer:
 
             self.angle_definitions.append({"name": angle_name, "index": index})
 
-        # --- LÓGICA DE CONTAGEM DE REPETIÇÕES ---
+        # --- CONTAGEM DE REPETIÇÕES ---
         self.rep_state = "up"
         self.counter = 0
         self.rep_quality = True
         self.actual_rep_errors = set()
 
-        # --- LÓGICA DE FEEDBACK E ESTADO ---
+        # --- FEEDBACK E ESTADO ---
         self.posture_feedback = "Inicie o exercício."
         self.posture_feedback_type = "INFO"
         self.posture_score = 100
@@ -163,11 +161,6 @@ class PostureAnalyzer:
         if max_idx >= len(keypoints):
             return "INDETERMINADO"
 
-        # (Para brevidade, assumimos que a lógica interna do detect_body_orientation
-        # permanece a mesma das versões anteriores enviadas)
-        # Use o código original para o corpo deste método
-
-        # Recriando a lógica básica para garantir funcionamento neste snippet:
         joint_points = {
             "left_shoulder": (
                 keypoints[left_shoulder_idx]
@@ -287,7 +280,7 @@ class PostureAnalyzer:
             if apply_when and current_phase != apply_when and apply_when != "both":
                 continue
 
-            # --- Lógica ZONE com Tolerância ---
+            # --- ZONE com Tolerância ---
             if rule_type == "zone":
                 angle_to_check_name = rule["angle"]
                 if active_side_prefix and (
@@ -310,7 +303,6 @@ class PostureAnalyzer:
                     is_perfect = green["min"] <= angle_value <= green["max"]
 
                     # 2. Verifica Zona Aceitável (Verde + Margem de Erro)
-                    # Ex: Se min é 160 e margin é 6, aceitamos até 154.
                     is_acceptable = (
                         (green["min"] - margin)
                         <= angle_value
@@ -318,7 +310,6 @@ class PostureAnalyzer:
                     )
 
                     if not is_perfect and not is_acceptable:
-                        # Se saiu da margem de erro, aí sim analisamos erro
                         if "yellow" in rule["zones"]:
                             yellow = rule["zones"]["yellow"]
                             # A margem de erro também "empurra" o início do erro
@@ -339,9 +330,8 @@ class PostureAnalyzer:
                         # Não gera erro de texto, mas desconta levemente o score para indicar imperfeição
                         score -= 5
 
-            # --- Lógica SEGMENT PARALLELISM com Tolerância ---
+            # --- SEGMENT PARALLELISM com Tolerância ---
             elif rule_type == "segment_parallelism":
-                # ... (cálculo dos pontos igual ao anterior) ...
                 s1_p1_idx = self.detector.get_landmark_index(rule["segment1"][0])
                 s1_p2_idx = self.detector.get_landmark_index(rule["segment1"][1])
                 s2_p1_idx = self.detector.get_landmark_index(rule["segment2"][0])
@@ -368,9 +358,8 @@ class PostureAnalyzer:
                         # Dentro da margem, desconta pouco
                         score -= 5
 
-            # --- Lógica VERTICAL COMPARISON ---
+            # --- VERTICAL COMPARISON ---
             elif rule_type == "vertical_comparison":
-                # ... (cálculo igual) ...
                 lm1_name, lm2_name = rule["landmark1"], rule["landmark2"]
                 if active_side_prefix:
                     lm1_name = lm1_name.replace("right_", active_side_prefix)
@@ -381,8 +370,7 @@ class PostureAnalyzer:
 
                 if vis1 > 0.65 and vis2 > 0.65:
                     y1, y2 = keypoints[lm1_idx][1], keypoints[lm2_idx][1]
-                    # Adicionamos uma tolerância de pixels normalizados (ex: 0.05)
-                    # pois Y é coordenada, não ângulo.
+                    # Tolerância de pixels normalizados (ex: 0.05)
                     y_margin = 0.03
 
                     if rule["condition"] == "is_below_or_level":
@@ -391,9 +379,8 @@ class PostureAnalyzer:
                             errors.append((rule["message"], "ATENCAO"))
                             score -= 10
 
-            # --- Lógica ANGLE OFFSET com Tolerância ---
+            # --- ANGLE OFFSET com Tolerância ---
             elif rule_type == "angle_offset":
-                # ... (cálculo igual) ...
                 base_name = rule["base_angle"]
                 offset_name = rule["offset_angle"]
                 if active_side_prefix:
