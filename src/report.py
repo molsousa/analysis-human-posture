@@ -4,14 +4,12 @@ from config import LOG_CONFIG
 
 class Log:
     """
-    Gera um relatório de SESSÃO focado em fornecer insights úteis para o usuário,
-    incluindo em quais repetições específicas os erros ocorreram.
+    Generates a session report focused on providing useful insights to the user,
+    including in which specific repetitions the errors occurred.
     """
 
     def __init__(self, exercise_config):
-        """
-        Inicializa as estruturas de dados para coletar estatísticas da sessão.
-        """
+        """ Initializes the data structures to collect session statistics """
         self.dir_logs = LOG_CONFIG["dir_logs"]
         self.exercise_config = exercise_config
         self.exercise_name = exercise_config["name"]
@@ -26,17 +24,18 @@ class Log:
         self._make_dir_log()
 
     def _make_dir_log(self):
-        """Cria o diretório para salvar o relatório, se ele não existir."""
+        """ Make a directory to save the report """
         os.makedirs(self.dir_logs, exist_ok=True)
 
     def save_rep(self, rep_num, rep_ok, rep_error):
         """
-        Registra os dados consolidados de uma única repetição finalizada.
-        Este método é chamado pelo PostureAnalyzer ao final de cada rep.
-
+        Records the consolidated data from a single completed repetition.
+        This method is called by PostureAnalyzer at tha end of each rep.
+        
         Args:
-            rep_ok (bool): True se a repetição foi executada com boa postura, False caso contrário.
-            rep_error (set): Um conjunto contendo as mensagens de erro que ocorreram na rep.
+            rep_num: total rep.
+            rep_ok: True if the reptition was performed wit good posture, False otherwise.
+            rep_error: A set containing the error messages that occurred in the rep.
         """
         self.stats["total_reps"] += 1
         if rep_ok:
@@ -51,7 +50,7 @@ class Log:
                 self.stats["errors"][error]["reps"].append(rep_num)
 
     def save(self):
-        """Salva o resumo estatístico da sessão em um arquivo de texto legível."""
+        """ Save the statistical summary of the session in a readable text file. """
         if self.stats["total_reps"] == 0:
             print("Nenhuma repetição foi completada para gerar o relatório.")
             return
@@ -94,10 +93,10 @@ class Log:
                 )
                 report_content.append(f"   -> Nas repetições: {reps_str}")
 
-                # Procura a regra correspondente à mensagem de erro para dar o foco correto
+                # Find the rule corresponding to the error message to give the correct focus
                 for rule in self.exercise_config["rules"]["feedback"]:
                     if rule["message"] == error_message:
-                        # Verifica se é uma regra de 'zona' (que tem a chave 'angle')
+                        # Check if it is a 'zone' rule
                         if "angle" in rule:
                             angle_name = rule["angle"]
                             joints = self.exercise_config["angle_definitions"][
@@ -108,18 +107,18 @@ class Log:
                                 f"   -> Foco: Alinhamento entre {joint_names}"
                             )
 
-                        # Verifica se é uma regra 'relativa' (que tem 'angle1' e 'angle2')
+                        # Check if it is a 'relative' rule
                         elif "angle1" in rule and "angle2" in rule:
                             angle1_name = rule["angle1"].replace("_", " ")
                             angle2_name = rule["angle2"].replace("_", " ")
                             report_content.append(
                                 f"   -> Foco: Relacao entre {angle1_name} e {angle2_name}"
                             )
-                        break  # Encontrou a regra, pode parar de procurar
+                        break  # Found the rule, stop searching
         else:
             report_content.append("\n--- EXCELENTE! ---")
             report_content.append("Você completou todas as repetições com boa postura!")
 
-        # Escreve o conteúdo no arquivo .txt
+        # Write the content to the file
         with open(self.log_file, "w", encoding="utf-8") as f:
             f.write("\n".join(report_content))
