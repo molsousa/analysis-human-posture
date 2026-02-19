@@ -1,69 +1,69 @@
-# Implementação
+# Implementation
 
-Essa pasta contém todos os arquivos necessários para a lógica de implementação do algoritmo, são arquivos que executam a lógica de detecção de pontos-chave, filtro de suavização e relatório de análise de postura.
+This folder contains all the files necessary for the implementation logic of the algorithm. These are files that execute the logic for key point detection, smoothing filter, and posture analysis report.
 
-## Arquivos fonte
+## Source files
 
 - [***angle_utils.py***](https://github.com/molsousa/analise-postura-humana/blob/main/src/angle_utils.py)
 
-    **Função:** Utilitário Matemático. 
+    **Function:** Mathematical Utility. 
     
-    - Um módulo simples que contém a função calculate_angle_3d.
+    - A simple module containing the calculate_angle_3d function.
 
-    - Calcula o ângulo em graus entre três pontos 3D no espaço.
+    - Calculates the angle in degrees between three 3D points in space.
 
-    - Vantagem: Isola a matemática vetorial do resto da lógica de análise, mantendo o código mais limpo e organizado.
+    - Advantage: Isolates vector mathematics from the rest of the analysis logic, keeping the code cleaner and more organized.
 
 - [***kalman_smoother.py***](https://github.com/molsousa/analise-postura-humana/blob/main/src/kalman_smoother.py)
-
-    **Função:** Filtro Avançado de Pontos-Chave.
     
-    - Este é um dos componentes mais importantes para a qualidade da detecção. Ele recebe os pontos-chave brutos do PoseDetector e os aprimora.
+    **Function:** Advanced Keypoint Filter.
+    
+    - This is one of the most important components for detection quality. It receives the raw keypoints from PoseDetector and refines them.
 
-    - Suaviza o tremor natural das detecções.
+    - Smooths out the natural jitter of detections.
 
-    - Estima a posição de pontos-chave que estão obstruídos.
+    - Estimates the position of keypoints that are occluded.
 
-    - Implementa uma heurística de simetria para que membros obstruídos se movam de forma realista junto com seus pares visíveis.
+    - Implements a symmetry heuristic so that occluded limbs move realistically along with their visible counterparts.
 
-    - Aplica amortecimento de velocidade para evitar que pontos obstruídos se "percam" e derivem pela tela.
+    - Applies velocity damping to prevent occluded points from “getting lost” and drifting across the screen.
 
 - [***pose_detector.py***](https://github.com/molsousa/analise-postura-humana/blob/main/src/pose_detector.py)
 
-    **Função:** Encapsulamento do MediaPipe Pose.
-    Esta classe funciona como um "wrapper" para a biblioteca MediaPipe Pose. Sua função é isolar toda a lógica de detecção de pose em um único lugar.
+    **Function:** MediaPipe Pose encapsulation.
 
-    - Recebe uma imagem e retorna a lista de pontos-chave 3D detectados.
+    This class acts as a wrapper for the MediaPipe Pose library. Its function is to isolate all pose detection logic in one place.
 
-    - Vantagem: Se no futuro quisermos trocar o MediaPipe por outro modelo de estimação de pose, apenas este arquivo precisará ser modificado, mantendo o resto do projeto intacto.
+    - Receives an image and returns the list of detected 3D keypoints.
+
+    - Advantage: If in the future we want to replace MediaPipe with another pose estimation model, only this file will need to be modified, keeping the rest of the project intact.
 
 - [***posture_analysis.py***](https://github.com/molsousa/analise-postura-humana/blob/main/src/posture_analysis.py)
 
-    **Função:** Esta é a classe que contém a lógica de negócio principal do projeto.
+    **Function:** This is the class that contains the main business logic of the project.
 
-    - Carrega e interpreta as regras do exercício a partir de um arquivo .json.
+    - Loads and interprets the exercise rules from a .json file.
 
-    - Implementa a máquina de estados (up/down) para contar as repetições, focando apenas no lado do corpo mais visível.
+    - Implements the state machine (up/down) to count repetitions, focusing only on the most visible side of the body.
 
-    - Analisa os ângulos corporais em tempo real e compará-los com as regras para gerar feedback de postura (ex: "Mantenha o corpo reto!").
+    - Analyzes body angles in real time and compares them with the rules to generate posture feedback (e.g., “Keep your body straight!”).
 
-    - Detecta a orientação geral do corpo (horizontal/flexão vs. vertical/em pé).
+    - Detects the general orientation of the body (horizontal/bending vs. vertical/standing).
 
-    - Coleta os erros de uma repetição e comunicá-los ao Relatorio ao final de cada ciclo.
+    - Collects the errors from a repetition and communicates them to the Report at the end of each cycle.
 
 - [***report.py***](https://github.com/molsousa/analise-postura-humana/blob/main/src/report.py)
-
-    **Função:** Gerador de Resumo da Sessão
     
-    - Esta classe é responsável por criar o relatório final legível para o usuário.
+    **Function:** Session Summary Generator
+    
+    - This class is responsible for creating the final report that is readable by the user.
 
-    - Recebe dados consolidados de cada repetição (se foi correta, quais erros ocorreram) do PostureAnalyzer.
+    - It receives consolidated data from each repetition (whether it was correct, what errors occurred) from PostureAnalyzer.
 
-    - Ao final da sessão, ele agrega todas essas informações para gerar um arquivo .txt com:
+    - At the end of the session, it aggregates all this information to generate a .txt file with:
 
-    - Estatísticas gerais (total de reps, % de acerto).
+    - General statistics (total reps, % accuracy).
 
-    - Uma lista dos erros de postura mais comuns.
+    - A list of the most common posture errors.
 
-    - Dicas sobre quais partes do corpo focar para corrigir esses erros.
-
+    - Tips on which parts of the body to focus on to correct these errors.

@@ -1,191 +1,191 @@
-# Analise de Postura Humana em Exercícios de Calistenia
+# Analysis of Human Posture in Calisthenics Exercises
 
-Este repositório contém um projeto de análise de pose humana em exercícios de calistenia usando a biblioteca Mediapipe Pose. O objetivo desse projeto é informar ao usuário se o mesmo está fazendo o exercício corretamente a fim de evitar lesões. Inicialmente o algoritmo detecta apenas flexão de braço e agachamento.
+This repository contains a project for analyzing human posture in calisthenics exercises using the Mediapipe Pose library. The goal of this project is to inform users whether they are performing the exercise correctly in order to avoid injury. Initially, the algorithm only detects push-ups and squats.
 
-A implementação do projeto faz parte de uma pesquisa científica desenvolvida no Laboratório de Computação Gráfica da Universidade do Oeste do Paraná (UNIOESTE). Antes da implementação fora publicado um artigo relacionado no Congresso Latino-Americano de Software Livre e Tecnologia Aberta (LATINOWARE), sendo possível acessar por esse link: [Análise e Orientação de Postura nos Exercícios de Calistenia usando Estimativa de Pose Humana](https://doi.org/10.5753/latinoware.2024.245728).
+The implementation of the project is part of scientific research developed at the Computer Graphics Laboratory of the State University of Western Paraná (UNIOESTE). Before implementation, a related article was published at the Latin American Congress on Free Software and Open Technology (LATINOWARE), which can be accessed via this link: [Analysis and Guidance of Posture in Calisthenics Exercises using Human Pose Estimation](https://doi.org/10.5753/latinoware.2024.245728).
 
-## Implementação
+## Implementation
 
-* O algoritmo foi todo implementado em Python, a biblioteca utilizada foi o Mediapipe Pose, foi utilizado a biblioteca Kalman Filter para auxiliar na detecção de pontos e suavizar o desempenho geral do algoritmo. Para acessar a implementação do filtro Kalman, acesse o link: [Filterpy](https://github.com/rlabbe/filterpy)
+* The algorithm was implemented entirely in Python, using the Mediapipe Pose library and the Kalman Filter library to assist in point detection and smooth the overall performance of the algorithm. To access the Kalman filter implementation, visit the link: [Filterpy](https://github.com/rlabbe/filterpy)
 
-* O arquivo [*posture_analysis*](https://github.com/molsousa/analise-postura-humana/blob/main/src/posture_analysis.py) faz a análise geral dos exercícios, toda a orientação dada ao usuário é centralizada nesse arquivo, para as limiares do exercícios, foram criados templates na pasta "[*exercise_templates*](https://github.com/molsousa/analise-postura-humana/tree/main/exercise_templates)", onde tem detalhadamente os ângulos a serem seguidos pelo usuário.
+* The [*posture_analysis*](https://github.com/molsousa/analise-postura-humana/blob/main/src/posture_analysis.py) file performs a general analysis of the exercises. All guidance given to the user is centralized in this file. For the exercise thresholds, templates were created in the "[*exercise_templates*] (https://github.com/molsousa/analise-postura-humana/tree/main/exercise_templates)", which details the angles to be followed by the user.
 
-* Os demais arquivos são auxiliares ao principal ([*posture_analysis*](https://github.com/molsousa/analise-postura-humana/blob/main/src/posture_analysis.py)). É possível entender a função principal de cada arquivo acessando o README de cada pasta.
+* The other files are auxiliary to the main one ([*posture_analysis*](https://github.com/molsousa/analise-postura-humana/blob/main/src/posture_analysis.py)). You can understand the main function of each file by accessing the README in each folder.
 
-* O algoritmo auxilia o usuário informando se sua posição está ou não correta. Contabiliza as repetições, e ao final, gera um relatório passando as flexões corretas, as flexões com postura incorreta, e a(s) articulação(ões) que decorreu(am) na postura incorreta.
+* The algorithm assists the user by informing them whether their position is correct or not. It counts the repetitions and, at the end, generates a report showing the correct push-ups, the push-ups with incorrect posture, and the joint(s) that resulted in the incorrect posture.
 
-## Arquivos fonte na pasta raiz
+## Source files in the root folder
 
 - [***main.py***](https://github.com/molsousa/analise-postura-humana/blob/main/main.py)
 
-    **Função:** Este é o script que você executa para iniciar a aplicação. Suas principais responsabilidades são:
+    **Function:** This is the script you run to start the application. Its main responsibilities are:
 
-    - Interpretar os argumentos de linha de comando (qual exercício e qual vídeo/câmera usar).
+    - Interpreting command line arguments (which exercise and which video/camera to use).
 
-    - Inicializar todos os objetos principais: PoseDetector, PostureAnalyzer, KalmanSmoother e Relatorio.
+    - Initializing all main objects: PoseDetector, PostureAnalyzer, KalmanSmoother, and Relatorio.
 
-    - Abrir a fonte de vídeo e executar o loop principal que processa frame a frame.
+    - Opening the video source and running the main loop that processes frame by frame.
 
-    - Coordenar o fluxo de dados em cada frame: detectar -> suavizar -> analisar.
+    - Coordinate the data flow in each frame: detect -> smooth -> analyze.
 
-    - Gerenciar toda a parte de visualização, desenhando o esqueleto e os textos de feedback na tela usando OpenCV.
+    - Manage the entire visualization part, drawing the skeleton and feedback texts on the screen using OpenCV.
 
-    - Chamar o método de salvar o relatório ao final da sessão.
+    - Call the method to save the report at the end of the session.
 
 - [***config.py***](https://github.com/molsousa/analise-postura-humana/blob/main/config.py)
 
-    **Função:** Este arquivo centraliza constantes e configurações usadas em diferentes partes do projeto. Ele define:
+    **Function:** This file centralizes constants and settings used in different parts of the project. It defines:
 
-    - As cores (em BGR) para cada tipo de feedback (CORRETO, ATENCAO, ERRO_CRITICO).
+    - The colors (in BGR) for each type of feedback (CORRECT, WARNING, CRITICAL).
 
-    - O nome do diretório onde os relatórios de sessão são salvos (ex: logs).
+    - The name of the directory where session reports are saved (e.g., logs).
 
-    - Isso permite alterar a aparência e o comportamento da aplicação facilmente, sem precisar modificar o código principal.
+    - This allows you to easily change the appearance and behavior of the application without having to modify the main code.
 
 - [***server.py***](https://github.com/molsousa/analise-postura-humana/blob/main/server.py)
  
-## Exemplos de Uso dos Principais Módulos
+## Examples of Use of the Main Modules
 
-Exemplos práticos de como utilizar os principais módulos do projeto para detecção e análise de postura humana.
+Pratical examples of how to use the main modules of the project for human posture detection and analysis.
 
-### 1. Detecção de Pose com MediaPipe
+### 1. Pose Detection with MediaPipe
 
 ```python
 from src.pose_detector import MediaPipePoseDetector
 import cv2
 
-# Inicializar o detector
+# Initialize the detector
 detector = MediaPipePoseDetector()
 
-# Carregar uma imagem para análise
-image = cv2.imread('imagem_exemplo.jpg')
+# Upload an image for analysis
+image = cv2.imread('example.jpg')
 
-# Detectar pose
+# Detect pose
 keypoints, pose_landmarks = detector.detect_pose(image)
 
-# Desenhar landmarks na imagem
+# Draw landmarks on the image
 detector.draw_landmarks(image, pose_landmarks)
-cv2.imwrite('imagem_landmarks.jpg', image)
+cv2.imwrite('landmarks_image.jpg', image)
 ```
 
-### 2. Cálculo de Ângulos Corporais
+### 2. Calculation of Body Angles
 
 ```python
 from src.angle_utils import calculate_angle_3d
 
-# Exemplo de keypoints detectados (x, y, z, visibilidade)
+# Example of detected keypoints (x, y, z, visibility)
 keypoints = [
-    (0.1, 0.2, 0.0, 0.99), # ponto 0
-    (0.2, 0.3, 0.0, 0.98), # ponto 1
-    (0.3, 0.4, 0.0, 0.95), # ponto 2
+    (0.1, 0.2, 0.0, 0.99), # point 0
+    (0.2, 0.3, 0.0, 0.98), # point 1
+    (0.3, 0.4, 0.0, 0.95), # point 2
     # ...
 ]
 
-# Calcular ângulo entre três pontos
-angulo = calculate_angle_3d(keypoints, 0, 1, 2)
-print(f"Ângulo entre pontos: {angulo:.2f} graus")
+# Calculate angle between three points
+angle = calculate_angle_3d(keypoints, 0, 1, 2)
+print(f"Angle between points: {angle:.2f} degrees")
 ```
 
-### 3. Suavização dos Pontos-Chave com Filtro de Kalman
+### 3. Smoothing Key Points with Kalman FIlter
 
 ```python
 from src.kalman_smoother import KalmanPointFilter
 
-# Inicializar filtro para um ponto (ex: joelho direito)
-filtro = KalmanPointFilter(landmark_index=14, R=10, Q=1.0) # índice conforme MediaPipe
+# Initialize filter for a point (e.g., right knee)
+filter = KalmanPointFilter(landmark_index=14, R=10, Q=1.0) # index according to MediaPipe
 
-# Atualizar filtro com observação do frame atual
-filtro.update(keypoints[14])
+# Update filter with observation of the current frame
+filter.update(keypoints[14])
 
-# Prever próxima posição suavizada
-ponto_suavizado = filtro.predict()
-print("Ponto suavizado:", ponto_suavizado)
+# Predict next smooth position
+smooth_point = filter.predict()
+print("Smoothed point:", smooth_point)
 ```
 
-### 4. Análise de Postura e Contagem de Repetições
+### 4. Posture Analysis and Rep Counting
 
 ```python
 from src.posture_analysis import PostureAnalyzer
 from src.pose_detector import MediaPipePoseDetector
 
-# Inicializar detector e analisador
+# Initialize detector and analyzer
 detector = MediaPipePoseDetector()
 analyzer = PostureAnalyzer('exercise_templates/squat.json', detector)
 
-# Exemplo de fluxo: receber keypoints de um frame de vídeo
+# Flow example: receiving keypoints from a video frame
 keypoints, _ = detector.detect_pose(image)
 
-# Analisar postura
-# (No uso real, chamar métodos próprios do PostureAnalyzer para processamento do exercício)
-# O método principal é processar os keypoints frame a frame e atualizar estados de repetição e feedback.
+# Analyze posture
+# (In actual use, call PostureAnalyzer's own methods for exercise processing)
+# The main method is to process keypoints frame by frame and update repetition and feedback states.
 ```
 
-### 5. Geração de Relatório de Sessão
+### 5. Session Report Generation
 
 ```python
 from src.report import Log
 
-# Inicializar relatório
+# Initialize report
 config = {
-    'name': 'Agachamento'
+    'name': 'Squat'
 }
 log = Log(exercise_config=config)
 
-# Salvar dados de uma repetição
+# Save data from a repetition
 rep_num = 1
 rep_ok = True
 rep_errors = set()
 log.save_rep(rep_num, rep_ok, rep_errors)
 
-# Gerar arquivo resumo
+# Generate summary file
 log.save()
 ```
 
-### 6. Utilizando Templates de Exercícios
+### 6. Using Exercise Templates
 
-Os arquivos `.json` em `exercise_templates/` definem regras e ângulos para cada exercício.  
-Exemplo de como criar um novo template:
+The `.json` files in `exercise_templates/` define rules and angles for each exercise.
+Example of how to create a new template:
 
 ```json
 {
-  "name": "Novo Exercício",
-  "main_angle": "algum_angulo",
+  "name": "New Exercise",
+  "main_angle": "any_angle",
   "angle_definitions": {
-    "algum_angulo": ["PONTO1", "PONTO2", "PONTO3"]
+    "any_angle": ["POINT1", "POINT2", "POINT3"]
   },
   "rules": {
-    // ... regras específicas
+    // ... specific rules
   }
 }
 ```
 
-Inicie o `PostureAnalyzer` com o caminho do novo template para que ele use as regras personalizadas.
+Start `PostureAnalyzer` with the path to the new template so that it uses the custom rules.
 
 ---
 
-### Recomendações
+### Recommendations
 
-- Consulte sempre os README dentro das pastas para entender a lógica de cada módulo.
-- Para adaptar novos exercícios, crie um novo arquivo `.json` com as regras e ângulos desejados.
-- As funções de cada módulo possuem docstrings explicativas; consulte-as para detalhes de parâmetros e retornos.
+- Always consult the README files inside the folders to understand the logic of each module.
+- To adapt new exercises, create a new `.json` file with the desired rules and angles.
+- The functions of each module have explanatory docstrings; consult them for details on parameters and returns.
 
 
-## Como utilizar
+## How to use
 
-* É necessário instalar o Python na sua versão 3.11 e garantir que está acessível nas variáveis de ambiente. Em caso de dúvida da sua versão de Python, executar:
+* You must install Python version 3.11 and ensure that it is accessible in the environment variables. If you are unsure of your Python version, run:
 
         python --version
 
-* É necessário instalar as bibliotecas contidas em `requeriments.txt`
+* You must install the libraries listed in `requeriments.txt`
 
         pip install -r requeriments.txt
 
-* É recomendável guardar os vídeos na pasta "[**videos/**](https://github.com/molsousa/analise-postura-humana/tree/main/videos)" a fim de evitar colocar um caminho mais extenso na execução.
+* It is recommended to save the videos in the “[**videos/**](https://github.com/molsousa/analise-postura-humana/tree/main/videos)” folder to avoid using a longer path during execution.
 
-* Para a utilização do algoritmo, segue abaixo o comando que deve ser feito no terminal:
+* To use the algorithm, enter the following command in the terminal:
 
-        python main.py --exercise exercise_templates/<exercício_desejado> --video videos/<video_desejado>
+        python main.py --exercise exercise_templates/<exercise> --video videos/<video>
  
-* Caso for desejável utilizar webcam ao invés de um vídeo já gravado, basta apenas apagar o texto posterior a *--video*, exemplo:
+* If you want to use a webcam instead of a pre-recorded video, simply delete the text after *--video*, for example:
 
-        python main.py --exercise exercise_templates/<exercício_desejado>
+        python main.py --exercise exercise_templates/<exercise>
