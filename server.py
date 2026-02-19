@@ -1,7 +1,4 @@
-"""
-Servidor web principal para interface do sistema de análise de postura.
-"""
-
+""" Main web server for the posture analysis system interface. """
 from flask import Flask, render_template, jsonify, send_from_directory
 from flask_cors import CORS
 import os
@@ -12,26 +9,26 @@ CORS(app)
 
 @app.route("/")
 def index():
-    """Página principal"""
+    """ Home page. """
     return render_template("index.html")
 
 
 @app.route("/static/<path:path>")
 def serve_static(path):
-    """Serve arquivos estáticos"""
+    """ Static files. """
     return send_from_directory("static", path)
 
 
 @app.route("/api/health")
 def health_check():
-    """Endpoint de verificação de saúde do servidor"""
+    """ Server health check endpoint. """
     return jsonify(
         {"status": "healthy", "service": "posture-analysis-web", "version": "1.0.0"}
     )
 
 
 if __name__ == "__main__":
-    # Criar diretórios necessários
+    # Make necessary directories
     os.makedirs("static", exist_ok=True)
     os.makedirs("templates", exist_ok=True)
 

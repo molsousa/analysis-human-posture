@@ -13,11 +13,11 @@ from src.kalman_smoother import KalmanPointSmoother
 from src.report import Log
 from config import COLOR_CONFIG
 
-# Criar servidor Flask para streaming
+# Create a Flask server for streaming
 video_app = Flask(__name__)
 CORS(video_app)
 
-# Variáveis globais para streaming
+# Global variables for streaming
 current_frame = None
 analysis_data = {
     "counter": 0,
@@ -33,7 +33,7 @@ frame_lock = threading.Lock()
 
 
 def draw_smoothed_landmarks(image, landmarks, detector, landmarks_to_hide=None):
-    """Desenha os landmarks suavizados (uma lista de tuplas) na imagem."""
+    """Draw the smoothed landmarks on the image."""
     if landmarks_to_hide is None:
         landmarks_to_hide = []
 
@@ -69,8 +69,7 @@ def draw_smoothed_landmarks(image, landmarks, detector, landmarks_to_hide=None):
 
 @video_app.route("/video_feed")
 def video_feed():
-    """Streaming de vídeo MJPEG"""
-
+    """MJPEG video streaming"""
     def generate():
         global current_frame
         while True:
@@ -91,21 +90,19 @@ def video_feed():
 
 @video_app.route("/api/status")
 def get_status():
-    """Retorna status da análise"""
+    """ Returns the status of the analysis """
     global analysis_data
     return analysis_data
 
 
 def run_flask():
-    """Executa servidor Flask em thread separada"""
+    """ Runs Flask server in a separate thread """
     video_app.run(host="0.0.0.0", port=5001, debug=False, threaded=True)
 
 
 def main(exercise_config, video_path=0):
-    """
-    Função principal para executar a análise de postura em tempo real.
-    """
-    # --- 1. Inicialização dos Componentes ---
+    """ Main function to perform real-time posture analysis """
+    # --- 1. Component initialization ---
     detector = MediaPipePoseDetector(model_complexity=1, min_detection_confidence=0.4)
     analyzer = PostureAnalyzer(
         exercise_config_path=exercise_config, pose_detector=detector
@@ -131,7 +128,7 @@ def main(exercise_config, video_path=0):
     print(f">>> Streaming disponível em: http://localhost:5001/video_feed")
     print(f">>> Status disponível em: http://localhost:5001/api/status")
 
-    # --- 2. Loop Principal de Processamento de Vídeo ---
+    # --- 2. Main video processing loop ---
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -150,7 +147,7 @@ def main(exercise_config, video_path=0):
         else:
             analyzer.analyze([], None, reporter)
 
-        # --- 3. Atualizar dados globais para streaming ---
+        # --- 3. Update global data for streaming ---
         global current_frame, analysis_data
         display_frame = frame.copy()
 
@@ -159,7 +156,7 @@ def main(exercise_config, video_path=0):
                 display_frame, smoothed_keypoints, detector, landmarks_to_hide
             )
 
-        # --- MODO DE DEPURACAO ---
+        # --- Debug mode ---
         if calculated_angles and smoothed_keypoints:
             h, w, _ = display_frame.shape
             for angle_def in analyzer.angle_definitions:
@@ -187,7 +184,7 @@ def main(exercise_config, video_path=0):
                         cv2.LINE_AA,
                     )
 
-        # Cores para feedback
+        # Feedback colors
         posture_color = COLOR_CONFIG["feedback_color"].get(
             analyzer.posture_feedback_type, (255, 255, 255)
         )
@@ -195,7 +192,7 @@ def main(exercise_config, video_path=0):
             analyzer.rep_feedback_type, (255, 255, 255)
         )
 
-        # Informações na tela (separadas)
+        # Information on screen
         cv2.putText(
             display_frame,
             f"Exercicio: {analyzer.exercise_name}",
@@ -227,7 +224,7 @@ def main(exercise_config, video_path=0):
             cv2.LINE_AA,
         )
 
-        # Feedback de POSTURA (sempre visível)
+        # Posture feedback
         cv2.putText(
             display_frame,
             "Postura:",
@@ -238,18 +235,6 @@ def main(exercise_config, video_path=0):
             2,
             cv2.LINE_AA,
         )
-        '''
-        cv2.putText(
-            display_frame,
-            f"Score: {analyzer.posture_score}/100",
-            (10, 190),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            posture_color,
-            1,
-            cv2.LINE_AA,
-        )
-        '''
 
         y0 = 220
         dy = 25
@@ -266,7 +251,7 @@ def main(exercise_config, video_path=0):
                 cv2.LINE_AA,
             )
 
-        # Feedback de REPETIÇÃO (apenas quando houver)
+        # Rep feedback
         if analyzer.rep_feedback:
             y_start = y0 + (len(analyzer.posture_feedback.split("\n")) * dy) + 20
             cv2.putText(
@@ -294,11 +279,11 @@ def main(exercise_config, video_path=0):
                     cv2.LINE_AA,
                 )
 
-        # Atualizar frame global para streaming
+        # Update global frame for streaming
         with frame_lock:
             current_frame = display_frame
 
-        # Atualizar dados de análise para API
+        # Update analytics data for API
         analysis_data = {
             "counter": analyzer.counter,
             "posture_feedback": analyzer.posture_feedback,
@@ -310,13 +295,13 @@ def main(exercise_config, video_path=0):
             "exercise_name": analyzer.exercise_name,
         }
 
-        # Mostrar na janela local
+        # Display in local window
         cv2.imshow("Analise de Postura", display_frame)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
-    # --- 4. Finalização ---
+    # --- 4. Finalization ---
     print("Salvando resumo da sessão...")
     reporter.save()
 
@@ -347,12 +332,12 @@ if __name__ == "__main__":
     if isinstance(video_input, str) and video_input.isdigit():
         video_input = int(video_input)
 
-    # Iniciar servidor Flask em thread separada
+    # Start flask server in a separate thread
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
 
-    # Aguardar um pouco para o servidor iniciar
+    # Wait for the server starts
     time.sleep(2)
 
-    # Executar análise principal
+    # Perform main analysis
     main(args.exercise, video_input)
