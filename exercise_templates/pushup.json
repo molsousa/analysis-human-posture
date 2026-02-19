@@ -1,5 +1,5 @@
 {
-  "name": "Flexao de Braco",
+  "name": "Push-up",
   "main_angle": "left_elbow_angle",
   "kalman_filter_params": {
     "R": 5,
@@ -20,8 +20,8 @@
     "feedback": [
       {
         "angle": "body_line_angle",
-        "message": "Mantenha o corpo reto! Evite levantar ou baixar o quadril.",
-        "apply_when": "HORIZONTAL (FLEXAO)",
+        "message": "Keep your body straight! Avoid raising or lowering your hips.",
+        "apply_when": "HORIZONTAL (PUSHUP)",
         "zones": {
           "green": { "min": 155, "max": 180 },
           "yellow": { "min": 145, "max": 154.9 }

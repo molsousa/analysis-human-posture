@@ -1,5 +1,5 @@
 {
-  "name": "Agachamento",
+  "name": "Squat",
   "main_angle": "right_knee_flexion",
   "kalman_filter_params": {
     "R": 10,
@@ -27,15 +27,15 @@
         "type": "angle_offset",
         "base_angle": "right_knee_flexion",
         "offset_angle": "right_hip_flexion",
-        "message": "Profundidade ou coordenacao incorreta.",
-        "apply_when": "AGACHADO",
+        "message": "Incorrect depth or coordination.",
+        "apply_when": "SQUAT",
         "expected_offset_range": { "min": 15, "max": 50 }
       },
       {
         "type": "segment_parallelism",
         "segment1": ["RIGHT_HIP", "RIGHT_SHOULDER"],
         "segment2": ["RIGHT_ANKLE", "RIGHT_KNEE"],
-        "message": "Desequilibrio tronco-canela.",
+        "message": "Trunk-shin imbalance.",
         "max_difference": 30
       }
     ]

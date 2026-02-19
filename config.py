@@ -4,9 +4,9 @@ COLOR_CONFIG = {
     # Nested dictionary for feedback colors, mapping the feedback type to a BGR color
     "feedback_color": {
         "INFO": (255, 255, 255),
-        "CORRETO": (0, 255, 0),
-        "ATENCAO": (0, 255, 255),
-        "ERRO_CRITICO": (0, 0, 255),
+        "CORRECT": (0, 255, 0),
+        "WARNING": (0, 255, 255),
+        "CRITICAL": (0, 0, 255),
     },
     # Drawing settings for pose landmarks and connections
     "conection_color": (255, 255, 255),  # Connection colors

@@ -36,7 +36,7 @@ class PostureAnalyzer:
 
             if None in index:
                 raise ValueError(
-                    f"Nome de articulacao invalido para o angulo '{angle_name}'"
+                    f"Invalid joint name for the angle '{angle_name}'"
                 )
 
             self.angle_definitions.append({"name": angle_name, "index": index})
@@ -48,7 +48,7 @@ class PostureAnalyzer:
         self.actual_rep_errors = set()
 
         # --- FEEDBACK AND STATUS ---
-        self.posture_feedback = "Inicie o exercício."
+        self.posture_feedback = "Start the exercise."
         self.posture_feedback_type = "INFO"
         self.posture_score = 100
 
@@ -56,7 +56,7 @@ class PostureAnalyzer:
         self.rep_feedback_type = "INFO"
 
         self.rep_complete_feedback_end_time = 0
-        self.movement_phase = "INICIANDO"
+        self.movement_phase = "STARTING"
 
     def _get_keypoint_visibility(self, keypoints, index):
         """
@@ -86,19 +86,19 @@ class PostureAnalyzer:
             hip_angle = angles.get("left_hip_flexion")
 
         if knee_angle is None or hip_angle is None:
-            return "INDETERMINADO"
+            return "UNKNOWN"
 
         if knee_angle > STAND_THRESHOLD:
-            return "EM PE"
+            return "STANDING"
 
         is_knee_in_range = SQUATTED_KNEE_MIN <= knee_angle <= SQUATTED_KNEE_MAX
         is_hip_in_range = SQUATTED_HIP_MIN <= hip_angle <= SQUATTED_HIP_MAX
         is_hip_deeper_than_knee = hip_angle < knee_angle
 
         if is_knee_in_range and is_hip_in_range and is_hip_deeper_than_knee:
-            return "AGACHADO"
+            return "SQUAT"
 
-        return "TRANSICAO"
+        return "TRANSITION"
 
     def analyze(self, keypoints, image_shape, reporter):
         """
@@ -112,9 +112,9 @@ class PostureAnalyzer:
             angles: a dictionary wit the names and values of the calculated angles.
         """
         if not keypoints:
-            self.posture_feedback = "Nenhuma pessoa detectada."
-            self.posture_feedback_type = "ERRO_CRITICO"
-            self.movement_phase = "INDETERMINADO"
+            self.posture_feedback = "No persons detected."
+            self.posture_feedback_type = "CRITICAL"
+            self.movement_phase = "UNKNOWN"
             self.posture_score = 0
             return {}
 
@@ -129,7 +129,7 @@ class PostureAnalyzer:
             angles[name] = calculate_angle_3d(keypoints, p1_idx, p2_idx, p3_idx)
             visibilities[name] = self._get_keypoint_visibility(keypoints, index)
 
-        if self.exercise_name == "Agachamento":
+        if self.exercise_name == "Squat":
             self.movement_phase = self._analyze_squat_phase(angles, visibilities)
         else:
             self.movement_phase = self.detect_body_orientation(keypoints, image_shape)
@@ -154,13 +154,13 @@ class PostureAnalyzer:
         # Full rep feedback
         if time.time() < self.rep_complete_feedback_end_time:
             if self.rep_quality:
-                self.rep_feedback = f"Repeticao {self.counter} concluida (sem erros)"
-                self.rep_feedback_type = "CORRETO"
+                self.rep_feedback = f"Rep {self.counter} completed (no errors)"
+                self.rep_feedback_type = "CORRECT"
             else:
                 self.rep_feedback = (
-                    f"Repeticao {self.counter} concluida (com erros)"
+                    f"Rep {self.counter} completed (with errors)"
                 )
-                self.rep_feedback_type = "ATENCAO"
+                self.rep_feedback_type = "WARNING"
         else:
             self.rep_feedback = ""
             self.rep_feedback_type = "INFO"
@@ -170,10 +170,10 @@ class PostureAnalyzer:
     def detect_body_orientation(self, keypoints, image_shape, vert_threshold=0.6):
         """
         Determines whether the body is in a vertical or horizontal position.
-        Returns "EM_PE", "HORIZONTAL" or "INDETERMINADO"
+        Returns "STANDING", "HORIZONTAL" or "UNKNOWN"
         """
         if not keypoints or image_shape is None:
-            return "INDETERMINADO"
+            return "UNKNOWN"
 
         h, w = image_shape[:2]
         left_shoulder_idx = self.detector.get_landmark_index("LEFT_SHOULDER")
@@ -185,7 +185,7 @@ class PostureAnalyzer:
         )
 
         if max_idx >= len(keypoints):
-            return "INDETERMINADO"
+            return "UNKNOWN"
 
         joint_points = {
             "left_shoulder": (
@@ -216,7 +216,7 @@ class PostureAnalyzer:
         elif joint_points["right_shoulder"]:
             superior_point = np.array(joint_points["right_shoulder"][:2])
         else:
-            return "INDETERMINADO"
+            return "UNKNOWN"
 
         if joint_points["left_hip"] and joint_points["right_hip"]:
             inferior_point = (
@@ -228,18 +228,18 @@ class PostureAnalyzer:
         elif joint_points["right_hip"]:
             inferior_point = np.array(joint_points["right_hip"][:2])
         else:
-            return "INDETERMINADO"
+            return "UNKNOWN"
 
         delta_x = abs(superior_point[0] - inferior_point[0]) * w
         delta_y = abs(superior_point[1] - inferior_point[1]) * h
         if delta_x + delta_y == 0:
-            return "INDETERMINADO"
+            return "UNKNOWN"
 
         verticality_ratio = delta_y / (delta_x + delta_y)
         return (
-            "EM PE (Orientacao)"
+            "STANDING (Guidance)"
             if verticality_ratio > vert_threshold
-            else "HORIZONTAL (FLEXAO)"
+            else "HORIZONTAL (PUSHUP)"
         )
 
     def _get_active_main_angle(self, angles, visibilities):
@@ -274,7 +274,7 @@ class PostureAnalyzer:
         # Error checking works for any exercise in the descent phase
         elif self.rep_state == "down" and main_angle_value > up_threshold:
             self.counter += 1
-            if posture_type in ["ATENCAO", "ERRO_CRITICO"]:
+            if posture_type in ["WARNING", "CRITICAL"]:
                 self.rep_quality = False
                 self.actual_rep_errors.add(self.posture_feedback)
 
@@ -342,15 +342,15 @@ class PostureAnalyzer:
                             # Margin of error also "pushes" the start of the error
                             # If it is in the yellow zone outside the acceptable margin 
                             if yellow["min"] <= angle_value <= yellow["max"]:
-                                errors.append((rule["message"], "ATENCAO"))
+                                errors.append((rule["message"], "WARNING"))
                                 score -= 15
                             else:
                                 # Out of yellow zone too
-                                errors.append((rule["message"], "ERRO_CRITICO"))
+                                errors.append((rule["message"], "CRITICAL"))
                                 score -= 30
                         else:
                             # Without a defined yellow zone, it goes to critical error
-                            errors.append((rule["message"], "ERRO_CRITICO"))
+                            errors.append((rule["message"], "CRITICAL"))
                             score -= 30
                     elif is_acceptable and not is_perfect:
                         # It's within the margin of error
@@ -379,7 +379,7 @@ class PostureAnalyzer:
 
                     # Adds the margin of error to the maximum difference rule
                     if diff > (rule["max_difference"] + margin):
-                        errors.append((rule["message"], "ATENCAO"))
+                        errors.append((rule["message"], "WARNING"))
                         score -= 20
                     elif diff > rule["max_difference"]:
                         # Within the margin, discount a litte
@@ -402,7 +402,7 @@ class PostureAnalyzer:
 
                     if rule["condition"] == "is_below_or_level":
                         if y1 < (y2 - y_margin):
-                            errors.append((rule["message"], "ATENCAO"))
+                            errors.append((rule["message"], "WARNING"))
                             score -= 10
 
             # --- ANGLE OFFSET wit tolerance ---
@@ -432,7 +432,7 @@ class PostureAnalyzer:
                         <= offset
                         <= (expected["max"] + margin)
                     ):
-                        errors.append((rule["message"], "ATENCAO"))
+                        errors.append((rule["message"], "WARNING"))
                         score -= 15
                     elif not (expected["min"] <= offset <= expected["max"]):
                         # In the margin
@@ -443,4 +443,4 @@ class PostureAnalyzer:
         if errors:
             return errors[0][0], errors[0][1], score
         else:
-            return "Postura Correta!", "CORRETO", score
+            return "Postura Correta!", "CORRECT", score

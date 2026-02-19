@@ -1,4 +1,4 @@
-/* Reset e configurações básicas */
+/* Basic settings */
 * {
     margin: 0;
     padding: 0;
@@ -20,7 +20,7 @@ body {
     padding: 20px;
 }
 
-/* Cabeçalho */
+/* Header */
 .header {
     text-align: center;
     margin-bottom: 30px;
@@ -45,7 +45,7 @@ body {
     opacity: 0.9;
 }
 
-/* Barra de Status */
+/* Status bar */
 .status-bar {
     display: flex;
     align-items: center;
@@ -87,7 +87,7 @@ body {
     color: #4cc9f0;
 }
 
-/* Container de Vídeo */
+/* Video container */
 .video-container {
     position: relative;
     width: 100%;
@@ -133,7 +133,7 @@ body {
     font-weight: bold;
 }
 
-/* Painéis de Informação */
+/* Info panels */
 .info-panels {
     display: flex;
     align-items: center;
@@ -165,135 +165,7 @@ body {
     font-size: 1.3rem;
 }
 
-/* Box de Feedback */
-.feedback-box {
-    display: flex;
-    align-items: center;
-    padding: 25px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-    min-height: 150px;
-    transition: all 0.3s ease;
-}
-
-.feedback-posture {
-    background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(58, 12, 163, 0.1) 100%);
-    border-left: 5px solid #4361ee;
-}
-
-.feedback-correct {
-    background: linear-gradient(135deg, rgba(76, 201, 240, 0.1) 0%, rgba(67, 97, 238, 0.1) 100%);
-    border-left: 5px solid #4cc9f0;
-}
-
-.feedback-warning {
-    background: linear-gradient(135deg, rgba(248, 150, 30, 0.1) 0%, rgba(243, 114, 44, 0.1) 100%);
-    border-left: 5px solid #f8961e;
-}
-
-.feedback-error {
-    background: linear-gradient(135deg, rgba(247, 37, 133, 0.1) 0%, rgba(181, 23, 158, 0.1) 100%);
-    border-left: 5px solid #f72585;
-}
-
-.feedback-icon {
-    font-size: 3rem;
-    margin-right: 25px;
-    min-width: 60px;
-}
-
-.feedback-content {
-    flex: 1;
-}
-
-#postureText,
-#repText {
-    font-size: 1.2rem;
-    margin-bottom: 15px;
-    line-height: 1.5;
-}
-
-/* Sistema de Score */
-.score-container {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.score-value {
-    font-size: 3.5rem;
-    font-weight: bold;
-    color: #4cc9f0;
-}
-
-.score-max {
-    font-size: 1.5rem;
-    color: #adb5bd;
-    align-self: flex-end;
-    margin-bottom: 10px;
-}
-
-.score-bar {
-    flex: 1;
-    height: 12px;
-    background: #3a3a5e;
-    border-radius: 6px;
-    overflow: hidden;
-    margin-top: 10px;
-}
-
-.score-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #4cc9f0, #4361ee);
-    border-radius: 6px;
-    transition: width 0.5s ease, background 0.5s ease;
-}
-
-/* Grid de Estatísticas */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-top: 25px;
-}
-
-@media (max-width: 768px) {
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-.stat-item {
-    background: rgba(255, 255, 255, 0.05);
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    transition: transform 0.3s ease;
-}
-
-.stat-item:hover {
-    transform: translateY(-3px);
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.stat-value {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: #4cc9f0;
-    margin-bottom: 5px;
-}
-
-.stat-label {
-    font-size: 0.9rem;
-    color: #adb5bd;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-/* Status de Conexão */
+/* Connection stats */
 .connection-status {
     display: flex;
     align-items: center;
@@ -331,7 +203,7 @@ body {
     }
 }
 
-/* Informações do Sistema */
+/* System information */
 .system-info {
     margin-top: 25px;
     font-size: 0.95rem;
@@ -369,7 +241,7 @@ body {
     border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Rodapé */
+/* Footer */
 .footer {
     text-align: center;
     padding: 10px;
@@ -385,12 +257,12 @@ body {
     margin-bottom: 10px;
 }
 
-/* Utilitários */
+/* Utils */
 .hidden {
     display: none !important;
 }
 
-/* Animações */
+/* Animations */
 @keyframes slideIn {
     from {
         opacity: 0;
@@ -407,7 +279,7 @@ body {
     animation: slideIn 0.5s ease forwards;
 }
 
-/* Scrollbar personalizada */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 10px;
 }

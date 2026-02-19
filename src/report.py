@@ -52,33 +52,33 @@ class Log:
     def save(self):
         """ Save the statistical summary of the session in a readable text file. """
         if self.stats["total_reps"] == 0:
-            print("Nenhuma repetição foi completada para gerar o relatório.")
+            print("No reps were completed to generate the report.")
             return
 
         report_content = []
         report_content.append("=" * 40)
-        report_content.append(f" RESUMO DA SESSÃO DE TREINO")
+        report_content.append(f" SUMMARY OF THE TRAINING SESSION")
         report_content.append("=" * 40)
-        report_content.append(f"Exercício: {self.exercise_name}")
+        report_content.append(f"Exercise: {self.exercise_name}")
         report_content.append(
-            f"Data e Hora: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n"
+            f"Date: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n"
         )
 
-        report_content.append("--- DESEMPENHO GERAL ---")
-        report_content.append(f"Total de Repetições: {self.stats['total_reps']}")
-        report_content.append(f"  - Repetições Corretas: {self.stats['ok_reps']}")
-        report_content.append(f"  - Repetições com Erros: {self.stats['invalid_reps']}")
+        report_content.append("--- OVERALL PERFORMANCE ---")
+        report_content.append(f"Total reps: {self.stats['total_reps']}")
+        report_content.append(f"  - Correct reps: {self.stats['ok_reps']}")
+        report_content.append(f"  - Incorrect reps: {self.stats['invalid_reps']}")
 
         try:
             sucess_percent = (self.stats["ok_reps"] / self.stats["total_reps"]) * 100
             report_content.append(
-                f"Taxa de Sucesso na Postura: {sucess_percent:.1f}%\n"
+                f"Success rate: {sucess_percent:.1f}%\n"
             )
         except ZeroDivisionError:
             pass
 
         if self.stats["invalid_reps"] > 0:
-            report_content.append("--- PONTOS PRINCIPAIS PARA MELHORAR ---")
+            report_content.append("--- POINTS TO IMPROVE ---")
 
             sorted_errors = sorted(
                 self.stats["errors"].items(),
@@ -89,9 +89,9 @@ class Log:
             for i, (error_message, details) in enumerate(sorted_errors):
                 reps_str = ", ".join(map(str, details["reps"]))
                 report_content.append(
-                    f"{i+1}. {error_message} (Ocorreu {details['count']} vez(es))"
+                    f"{i+1}. {error_message} (Occurred {details['count']} time(s))"
                 )
-                report_content.append(f"   -> Nas repetições: {reps_str}")
+                report_content.append(f"   -> In the reps: {reps_str}")
 
                 # Find the rule corresponding to the error message to give the correct focus
                 for rule in self.exercise_config["rules"]["feedback"]:
@@ -104,7 +104,7 @@ class Log:
                             ]
                             joint_names = ", ".join(joints).replace("_", " ").title()
                             report_content.append(
-                                f"   -> Foco: Alinhamento entre {joint_names}"
+                                f"   -> Focus: Alignment between {joint_names}"
                             )
 
                         # Check if it is a 'relative' rule
@@ -112,12 +112,12 @@ class Log:
                             angle1_name = rule["angle1"].replace("_", " ")
                             angle2_name = rule["angle2"].replace("_", " ")
                             report_content.append(
-                                f"   -> Foco: Relacao entre {angle1_name} e {angle2_name}"
+                                f"   -> Foco: Relation between {angle1_name} e {angle2_name}"
                             )
                         break  # Found the rule, stop searching
         else:
-            report_content.append("\n--- EXCELENTE! ---")
-            report_content.append("Você completou todas as repetições com boa postura!")
+            report_content.append("\n--- EXCELLENT! ---")
+            report_content.append("You completed all repetitions with good posture!")
 
         # Write the content to the file
         with open(self.log_file, "w", encoding="utf-8") as f:

@@ -33,18 +33,18 @@ if __name__ == "__main__":
     os.makedirs("templates", exist_ok=True)
 
     print("=" * 60)
-    print("Interface Web - Análise de Postura")
+    print("Web Interface - Posture Analysis")
     print("=" * 60)
-    print("URLs disponíveis:")
-    print(f"  - Interface principal: http://localhost:5000")
+    print("Available URLs:")
+    print(f"  - Main interface: http://localhost:5000")
     print(f"  - Health check: http://localhost:5000/api/health")
     print("=" * 60)
-    print("Instruções:")
+    print("Instructions:")
     print(
-        "1. Execute a análise: python main.py --exercise exercise_templates/pushup.json --video 0"
+        "1. Run the analysis: python main.py --exercise exercise_templates/pushup.json --video 0"
     )
-    print("2. Acesse esta interface para ver o streaming")
-    print("3. Use outro dispositivo na rede para acesso remoto")
+    print("2. Access this interface to view the stream")
+    print("3. Use another device on the network for remote access")
     print("=" * 60)
 
     app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)

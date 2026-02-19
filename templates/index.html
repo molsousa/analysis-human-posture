@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Análise de Postura - Streaming</title>
+    <title>Posture Analysis - Streaming</title>
     <link rel="stylesheet" href="/static/style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <h1>Análise de Postura em Tempo Real</h1>
+        <h1>Real-Time Posture Analysis</h1>
       </div>
 
       <div class="video-container">
@@ -20,19 +20,19 @@
       <div class="info-panels">
         <!-- Rep feedback panel -->
         <div class="panel">
-          <h2 class="panel-title"><i class="fas fa-info-circle"></i> Informações do Sistema</h2>
+          <h2 class="panel-title"><i class="fas fa-info-circle"></i>System Information</h2>
           <div class="connection-status">
             <span class="status-dot" id="statusDot"></span>
-            <span id="connectionText">Conectando ao servidor de análise...</span>
+            <span id="connectionText">Connecting to the analytics server...</span>
           </div>
 
           <div class="system-info">
             <p>
-              <i class="fas fa-laptop"></i> Execute no notebook:
+              <i class="fas fa-laptop"></i>Run on the notebook:
             </p>
             <code>python main.py --exercise exercise_templates/pushup.json --video 0</code>
             <p>
-              <i class="fas fa-globe"></i> Acesse pelo celular:
+              <i class="fas fa-globe"></i>Access via smartphone:
             </p>
             <div class="server-url" id="serverAddress">http://localhost:5000</div>
           </div>
@@ -40,7 +40,7 @@
       </div>
 
       <div class="footer">
-        <p>Sistema de Análise de Postura</p>
+        <p>Posture Analysis System</p>
       </div>
     </div>
 

@@ -21,13 +21,13 @@ CORS(video_app)
 current_frame = None
 analysis_data = {
     "counter": 0,
-    "posture_feedback": "Aguardando...",
+    "posture_feedback": "Loading...",
     "posture_feedback_type": "INFO",
     "posture_score": 100,
     "rep_feedback": "",
     "rep_feedback_type": "INFO",
-    "movement_phase": "INICIANDO",
-    "exercise_name": "Nenhum",
+    "movement_phase": "STARTING",
+    "exercise_name": "None",
 }
 frame_lock = threading.Lock()
 
@@ -121,18 +121,18 @@ def main(exercise_config, video_path=0):
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        print(f"Erro: Não foi possível abrir o vídeo em {video_path}")
+        print(f"Error: The video could not be opened in {video_path}")
         return
 
-    print(">>> Análise iniciada. Pressione 'q' para sair.")
-    print(f">>> Streaming disponível em: http://localhost:5001/video_feed")
-    print(f">>> Status disponível em: http://localhost:5001/api/status")
+    print(">>> Analysis started. Press 'q' to exit.")
+    print(f">>> Streaming available at: http://localhost:5001/video_feed")
+    print(f">>> Status available at: http://localhost:5001/api/status")
 
     # --- 2. Main video processing loop ---
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
-            print("Fim do vídeo ou erro na captura.")
+            print("End of video or capture error.")
             break
 
         raw_keypoints, pose_landmarks_results = detector.detect_pose(frame)
@@ -195,7 +195,7 @@ def main(exercise_config, video_path=0):
         # Information on screen
         cv2.putText(
             display_frame,
-            f"Exercicio: {analyzer.exercise_name}",
+            f"Exercise: {analyzer.exercise_name}",
             (10, 40),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
@@ -215,7 +215,7 @@ def main(exercise_config, video_path=0):
         )
         cv2.putText(
             display_frame,
-            f"Fase: {analyzer.movement_phase}",
+            f"Phase: {analyzer.movement_phase}",
             (10, 120),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.9,
@@ -227,7 +227,7 @@ def main(exercise_config, video_path=0):
         # Posture feedback
         cv2.putText(
             display_frame,
-            "Postura:",
+            "Posture:",
             (10, 160),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.9,
@@ -256,7 +256,7 @@ def main(exercise_config, video_path=0):
             y_start = y0 + (len(analyzer.posture_feedback.split("\n")) * dy) + 20
             cv2.putText(
                 display_frame,
-                "Repeticao:",
+                "Rep:",
                 (10, y_start),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.9,
@@ -296,13 +296,13 @@ def main(exercise_config, video_path=0):
         }
 
         # Display in local window
-        cv2.imshow("Analise de Postura", display_frame)
+        cv2.imshow("Posture analysis", display_frame)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
     # --- 4. Finalization ---
-    print("Salvando resumo da sessão...")
+    print("Saving session summary...")
     reporter.save()
 
     cap.release()
@@ -311,19 +311,19 @@ def main(exercise_config, video_path=0):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Análise de Postura em Exercícios de Calistenia."
+        description="Posture Analysis in Calisthenics Exercises."
     )
     parser.add_argument(
         "--exercise",
         type=str,
         required=True,
-        help="Caminho para o arquivo de configuração do exercício (JSON).",
+        help="Path to the exercise configuration file (JSON).",
     )
     parser.add_argument(
         "--video",
         type=str,
         default="0",
-        help='Caminho para o arquivo de vídeo ou "0" para usar a webcam.',
+        help='Path to the video or "0" to use the webcam.',
     )
 
     args = parser.parse_args()
