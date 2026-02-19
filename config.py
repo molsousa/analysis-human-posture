@@ -1,21 +1,18 @@
-"""
-Arquivo de configuração principal do projeto de análise de postura.
-"""
-
-# Cores e tamanhos para a visualização do esqueleto e feedback.
+""" Main configuration file for the posture analysis project """
+# Colors and sizes for skeletion visualization and feedback
 COLOR_CONFIG = {
-    # Dicionário aninhado para as cores do feedback, mapeando o tipo de feedback para uma cor BGR
+    # Nested dictionary for feedback colors, mapping the feedback type to a BGR color
     "feedback_color": {
         "INFO": (255, 255, 255),
         "CORRETO": (0, 255, 0),
         "ATENCAO": (0, 255, 255),
         "ERRO_CRITICO": (0, 0, 255),
     },
-    # Configurações de desenho para os landmarks e conexões da pose
-    "conection_color": (255, 255, 255),  # Cores da conexão
-    "landmark_radius": 5,  # Raio
-    "connection_thickness": 2,  # Espessura da conexão
+    # Drawing settings for pose landmarks and connections
+    "conection_color": (255, 255, 255),  # Connection colors
+    "landmark_radius": 5,  # Ratio
+    "connection_thickness": 2,  # Connection thickness
 }
 
-# Configurações para o relatório de sessão
+# Settings for the session report
 LOG_CONFIG = {"dir_logs": "logs"}
