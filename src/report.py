@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from config import LOG_CONFIG
+from src.config import LOG_CONFIG
 
 class Log:
     """

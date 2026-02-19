@@ -14,6 +14,16 @@ This folder contains all the files necessary for the implementation logic of the
 
     - Advantage: Isolates vector mathematics from the rest of the analysis logic, keeping the code cleaner and more organized.
 
+- [***config.py***](https://github.com/molsousa/analise-postura-humana/blob/main/config.py)
+
+    **Function:** This file centralizes constants and settings used in different parts of the project. It defines:
+
+    - The colors (in BGR) for each type of feedback (CORRECT, WARNING, CRITICAL).
+
+    - The name of the directory where session reports are saved (e.g., logs).
+
+    - This allows you to easily change the appearance and behavior of the application without having to modify the main code.
+
 - [***kalman_smoother.py***](https://github.com/molsousa/analise-postura-humana/blob/main/src/kalman_smoother.py)
     
     **Function:** Advanced Keypoint Filter.

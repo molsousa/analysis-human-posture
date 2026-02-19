@@ -32,16 +32,6 @@ The implementation of the project is part of scientific research developed at th
 
     - Call the method to save the report at the end of the session.
 
-- [***config.py***](https://github.com/molsousa/analise-postura-humana/blob/main/config.py)
-
-    **Function:** This file centralizes constants and settings used in different parts of the project. It defines:
-
-    - The colors (in BGR) for each type of feedback (CORRECT, WARNING, CRITICAL).
-
-    - The name of the directory where session reports are saved (e.g., logs).
-
-    - This allows you to easily change the appearance and behavior of the application without having to modify the main code.
-
 - [***server.py***](https://github.com/molsousa/analise-postura-humana/blob/main/server.py)
  
 ## Examples of Use of the Main Modules

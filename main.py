@@ -11,7 +11,7 @@ from src.posture_analysis import PostureAnalyzer
 from src.pose_detector import MediaPipePoseDetector
 from src.kalman_smoother import KalmanPointSmoother
 from src.report import Log
-from config import COLOR_CONFIG
+from src.config import COLOR_CONFIG
 
 # Create a Flask server for streaming
 video_app = Flask(__name__)

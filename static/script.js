@@ -108,10 +108,10 @@ class PostureStreamingApp {
 document.addEventListener('DOMContentLoaded', () => {
     try {
         window.app = new PostureStreamingApp();
-        console.log('Aplicação inicializada com sucesso!');
+        console.log('Aplication successfully started!');
     } catch (error) {
-        console.error('Erro ao inicializar a aplicação:', error);
-        showError('Falha ao inicializar a aplicação. Recarregue a página.');
+        console.error('Error initializing the application:', error);
+        showError('Failed to initialize the application. Please reload the page.');
     }
 });
 
