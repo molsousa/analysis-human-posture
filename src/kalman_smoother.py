@@ -22,25 +22,25 @@ class KalmanPointFilter:
     """
 
     def __init__(self, landmark_index, R, Q, velocity_decay=0.98):
-        # --- MODELO DE ACELERAÇÃO CONSTANTE ---
-        # Estado 9 dimensões: [x, y, z, vx, vy, vz, ax, ay, az]
+        # --- Constant Accelaration Model ---
+        # State 9 dimensions: [x, y, z, vx, vy, vz, ax, ay, az]
         self.kf = KalmanFilter(dim_x=9, dim_z=3)
         self.landmark_index = landmark_index
 
         self.default_decay = velocity_decay
         self.hand_decay = 0.85
 
-        dt = 1.0  # Delta de tempo
+        dt = 1.0  # Time delta
 
-        # Matriz de Transição de Estado (F) 9x9
-        # Atualiza a posição com base na velocidade e aceleração
-        # Atualiza a velocidade com base na aceleração
+        # State Transition Matriz
+        # Updates position based on velocity and acceleration
+        # Updates velocity based on accelation
         self.kf.F = np.eye(9)
         self.kf.F[0, 3] = self.kf.F[1, 4] = self.kf.F[2, 5] = dt
         self.kf.F[3, 6] = self.kf.F[4, 7] = self.kf.F[5, 8] = dt
         self.kf.F[0, 6] = self.kf.F[1, 7] = self.kf.F[2, 8] = 0.5 * (dt**2)
 
-        # Matriz de Medição (H) 3x9 - ainda medimos apenas a posição
+        # Measurement Matrix 3x9, still measuring only the position
         self.kf.H = np.array(
             [
                 [1, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -49,11 +49,11 @@ class KalmanPointFilter:
             ]
         )
 
-        # Covariância do Ruído da Medição (R)
+        # Measurement Noise Covariance
         self.kf.R *= R
 
-        # Covariância do Ruído do Processo (Q) - agora 9x9
-        # Representa a incerteza na nossa suposição de "aceleração constante"
+        # Process Noise Covariance, 9x9
+        # Represents the uncertainty of constant acceleration
         self.kf.Q = np.eye(9) * Q
 
         self.kf.x = np.zeros((9, 1))
@@ -64,23 +64,20 @@ class KalmanPointFilter:
     def predict(self):
         self.kf.predict()
 
-        # Amortece a velocidade e a aceleração para evitar instabilidade
+        # Cushions speed and acceleration to prevent instability
         decay = (
             self.hand_decay
             if self.landmark_index in HAND_LANDMARKS
             else self.default_decay
         )
-        self.kf.x[3:6] *= decay  # Amortece a velocidade
-        self.kf.x[6:] *= decay  # Amortece a aceleração
+        self.kf.x[3:6] *= decay  # Cushions velocity
+        self.kf.x[6:] *= decay  # Cushions acceleration
 
         return self.kf.x[:3].flatten()
 
 
 class KalmanPointSmoother:
-    """
-    Aplica o Filtro de Kalman com parâmetros customizáveis por exercício.
-    """
-
+    """ Apllies the Kalman Filter wit customizable parameters per exercise. """
     def __init__(self, R, Q, visibility_threshold=0.65):
         self.filters = {}
         self.visibility_threshold = visibility_threshold
@@ -123,7 +120,7 @@ class KalmanPointSmoother:
                 ):
                     partner_filter = self.filters[symmetric_partner_idx]
                     current_filter = self.filters[i]
-                    # Copia o estado completo de movimento (velocidade E aceleração)
+                    # Copies the complete movement status
                     current_filter.kf.x[3:] = partner_filter.kf.x[3:]
 
             predicted_pos = self.filters[i].predict()
