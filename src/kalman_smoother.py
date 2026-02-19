@@ -17,9 +17,7 @@ HAND_LANDMARKS = {
 
 
 class KalmanPointFilter:
-    """
-    Gerencia um Filtro de Kalman para um único ponto 3D usando um modelo de aceleração constante.
-    """
+    """ Manages a Kalman Filter for a single 3D point using a constant acceleration model. """
     def __init__(self, landmark_index, R, Q, velocity_decay=0.98):
         # --- Constant Accelaration Model ---
         # State 9 dimensions: [x, y, z, vx, vy, vz, ax, ay, az]
