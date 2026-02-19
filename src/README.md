@@ -14,7 +14,7 @@ This folder contains all the files necessary for the implementation logic of the
 
     - Advantage: Isolates vector mathematics from the rest of the analysis logic, keeping the code cleaner and more organized.
 
-- [***config.py***](https://github.com/molsousa/analise-postura-humana/blob/main/config.py)
+- [***config.py***](https://github.com/molsousa/analise-postura-humana/blob/main/src/config.py)
 
     **Function:** This file centralizes constants and settings used in different parts of the project. It defines:
 
